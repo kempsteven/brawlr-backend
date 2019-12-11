@@ -1,6 +1,8 @@
 import express from 'express'
 import bodyParser from 'body-parser'
 import mongoose from 'mongoose'
+import morgan from 'morgan'
+
 import { Routes } from './routes'
 
 class App {
@@ -23,10 +25,33 @@ class App {
             next();
         })
 
+        //consoles route used
+        this.app.use(morgan('dev'))
+
         // support application/json type post data
-        this.app.use(bodyParser.json());
+        this.app.use(bodyParser.json())
+
         //support application/x-www-form-urlencoded post data
-        this.app.use(bodyParser.urlencoded({ extended: false }));
+        this.app.use(bodyParser.urlencoded({ extended: false }))
+
+        // //if received route is not found
+        // this.app.use((req, res, next) => {
+        //     const error = new Error('Route Not Found')
+
+        //     error.status = 404
+
+        //     next(error)
+        // })
+
+        // //handling error
+        // this.app.use((error : Error, req, res, next) => {
+        //     res.status(error.status || 500)
+        //     res.json({
+        //         error: {
+        //             message: error.message
+        //         }
+        //     })
+        // })
     }
 
     private mongoSetup () : void {

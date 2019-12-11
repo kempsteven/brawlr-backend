@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import { userInfoSchema } from './userInformation'
 
 const Schema = mongoose.Schema
 
@@ -32,7 +33,16 @@ const userSchema = new Schema({
         max: 1024
     },
 
-    date: {
+    userInformation: {
+        userInfoSchema
+    },
+
+    status: {
+        type: Number,
+        default: 0
+    },
+
+    createdAt: {
         type: Date,
         default: Date.now
     }
