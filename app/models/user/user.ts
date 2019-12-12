@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { userInfoSchema } from './userInformation'
+import { userInfoSchema } from './user-information'
 
 const Schema = mongoose.Schema
 
