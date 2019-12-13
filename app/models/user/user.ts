@@ -1,5 +1,4 @@
 import mongoose from 'mongoose'
-import { userInfoSchema } from './user-information'
 
 const Schema = mongoose.Schema
 
@@ -33,8 +32,31 @@ const userSchema = new Schema({
         max: 1024
     },
 
-    userInformation: {
-        userInfoSchema
+    bio: {
+        type: String,
+        min: 0,
+        max: 255
+    },
+
+    age: {
+        type: Number,
+        required: true,
+        min: 1,
+        max: 100
+    },
+
+    fighterType: {
+        type: String,
+        required: true,
+        min: 2,
+        max: 255
+    },
+
+    location: {
+        type: String,
+        required: true,
+        min: 2,
+        max: 1024
     },
 
     status: {

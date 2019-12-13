@@ -4,7 +4,7 @@ import multer from 'multer'
 class FormData {
     private storage = multer.memoryStorage()
 
-    private fileFilter = (req: Request, file : File, cb : CallableFunction) => {
+    private fileFilter = (req: Request, file: Express.Multer.File, cb: CallableFunction) => {
         let allowedMimeType = ['image/webp', 'image/jpeg', 'image/png']
 
         if (allowedMimeType.indexOf(file.mimetype) > -1) {
@@ -14,7 +14,7 @@ class FormData {
         }
     }
 
-    private upload = multer({
+    private multerOptions: multer.Options = {
         storage: this.storage,
 
         limits: {
@@ -22,10 +22,9 @@ class FormData {
         },
 
         fileFilter: this.fileFilter
-    })
-
-    constructor () {
     }
+
+    private upload = multer(this.multerOptions)
 
     public uploadNone () {
         return this.upload.none()

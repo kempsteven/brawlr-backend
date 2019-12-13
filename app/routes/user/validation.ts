@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express'
+import User from '../../models/user/user'
 import Joi from '@hapi/joi'
 
-class UserValidation {
-    public validateSignUp (req: Request, res: Response, next: NextFunction): void | Response {
+class SignUpValidation {
+    public joiValidation (req: Request, res: Response, next: NextFunction): void | Response {
         const schema = Joi.object({
             firstName: Joi.string().min(6).max(255).required(),
 
@@ -12,15 +13,13 @@ class UserValidation {
 
             password: Joi.string().min(6).max(1024).required(),
 
-            userInformation: Joi.object({
-                bio: Joi.string().min(0).max(250).allow('', null),
+            bio: Joi.string().min(0).max(250).allow('', null),
 
-                age: Joi.number().max(130),
+            age: Joi.number().max(130),
 
-                fighterType: Joi.string().min(2).max(255).required(),
+            fighterType: Joi.string().min(2).max(255).required(),
 
-                location: Joi.string().min(2).max(255).required()
-            }).required()
+            location: Joi.string().min(2).max(255).required()
         })
 
         const { error } = schema.validate(req.body)
@@ -33,8 +32,20 @@ class UserValidation {
 
         next()
     }
+
+    public async isEmailExist (req: Request, res: Response, next: NextFunction): Promise<void | Response> {
+        const isEmailExist = await User.findOne({ email: req.body.email })
+
+        if (isEmailExist) {
+            return res.status(422).json({
+                message: 'Email already exists'
+            })
+        }
+
+        next()
+    }
 }
 
-export const userValidation: UserValidation = new UserValidation()
+export const signUpValidation: SignUpValidation = new SignUpValidation()
 
 
