@@ -1,13 +1,13 @@
 import { Request, Response, NextFunction } from 'express'
-import User from '../../models/user/user'
+import { userModel } from '../../models/user/user'
 import Joi from '@hapi/joi'
 
 class SignUpValidation {
     public joiValidation (req: Request, res: Response, next: NextFunction): void | Response {
         const schema = Joi.object({
-            firstName: Joi.string().min(6).max(255).required(),
+            firstName: Joi.string().min(2).max(255).required(),
 
-            lastName: Joi.string().min(6).max(255).required(),
+            lastName: Joi.string().min(2).max(255).required(),
 
             email: Joi.string().min(6).max(255).required().email(),
 
@@ -34,7 +34,7 @@ class SignUpValidation {
     }
 
     public async isEmailExist (req: Request, res: Response, next: NextFunction): Promise<void | Response> {
-        const isEmailExist = await User.findOne({ email: req.body.email })
+        const isEmailExist = await userModel.findOne({ email: req.body.email })
 
         if (isEmailExist) {
             return res.status(422).json({
@@ -47,5 +47,27 @@ class SignUpValidation {
 }
 
 export const signUpValidation: SignUpValidation = new SignUpValidation()
+
+class SignInValidation {
+    public joiValidation(req: Request, res: Response, next: NextFunction): void | Response {
+        const schema = Joi.object({
+            email: Joi.string().email().required(),
+
+            password: Joi.required(),
+        })
+
+        const { error } = schema.validate(req.body)
+
+        if (error) {
+            return res.status(422).json({
+                message: error.details[0].message.replace(/"/g, '')
+            })
+        }
+
+        next()
+    }
+}
+
+export const signInValidation: SignInValidation = new SignInValidation()
 
 

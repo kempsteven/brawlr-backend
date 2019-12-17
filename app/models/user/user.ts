@@ -1,6 +1,4 @@
-import mongoose from 'mongoose'
-
-const Schema = mongoose.Schema
+import { Schema, model, Document } from 'mongoose'
 
 const userSchema = new Schema({
     firstName: {
@@ -62,12 +60,12 @@ const userSchema = new Schema({
     status: {
         type: Number,
         default: 0
-    },
-
-    createdAt: {
-        type: Date,
-        default: Date.now
     }
-})
+}, { timestamps: true })
+export interface SavedUserDocument extends Document {
+    firstName: string
+    lastName: string
+    password: string
+}
 
-export default mongoose.model('User', userSchema)
+export const userModel = model<SavedUserDocument>('User', userSchema)

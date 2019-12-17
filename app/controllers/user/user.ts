@@ -1,20 +1,14 @@
-import * as mongoose from 'mongoose'
-import User from '../../models/user/user'
+import { userModel, SavedUserDocument } from '../../models/user/user'
 import { Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
-
-interface SavedUser {
-    firstName: string
-    lastName: string
-    email: string
-}
+import jwt, { Secret } from 'jsonwebtoken'
 
 class UserController {
     public async signUp(req: Request, res: Response): Promise<void | Response> {
-        const salt = await bcrypt.genSalt(10)
-        const hashedPassword = await bcrypt.hash(req.body.password, salt)
+        const salt: string = await bcrypt.genSalt(10)
+        const hashedPassword: string = await bcrypt.hash(req.body.password, salt)
 
-        const user = new User({
+        const user = new userModel({
             firstName: req.body.firstName,
             lastName: req.body.lastName,
             email: req.body.email,
@@ -26,16 +20,46 @@ class UserController {
         })
 
         try {
-            const { firstName, lastName, email }: SavedUser = await user.save()
+            const { firstName, lastName }: SavedUserDocument = await user.save()
 
-            res.status(200).send({
+            return res.status(200).send({
                 firstName,
                 lastName,
-                email
+                message: 'User created'
             })
         } catch (err) {
-            res.status(400).send(err)
+            return res.status(400).send(err)
         }
+    }
+
+    public async signIn(req: Request, res: Response): Promise<void | Response> {
+        const user = await userModel.findOne({ email: req.body.email })
+
+        if (!user) {
+            return res.status(400).json({
+                message: 'Authentication Failed'
+            })
+        }
+
+        const isPassValid = await bcrypt.compare(req.body.password, user.password)
+
+        if (!isPassValid) return res.status(400).json({
+            message: 'Authentication Failed'
+        })
+
+        // Create and Assign Token
+        const token = jwt.sign({ _id: user._id }, process.env.jwt_secret as Secret)
+
+        return res.status(200).json({
+            token: token,
+            message: 'Logged In Successfully'
+        })
+    }
+
+    public checkToken(req: Request, res: Response): Response {
+        return res.status(200).json({
+            message: 'Token Authenticated'
+        })
     }
 }
 
