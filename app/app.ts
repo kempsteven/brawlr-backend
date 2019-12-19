@@ -55,7 +55,7 @@ class App {
     }
 
     private mongoSetup () : void {
-        const uri = `mongodb+srv://${process.env.db_user}:${process.env.db_pass}@brawlr-gp23e.mongodb.net/test?retryWrites=true&w=majority`
+        const uri = process.env.MONGO_DB_URI as string
 
         const options = {
             useNewUrlParser: true,
@@ -64,7 +64,7 @@ class App {
         }
 
         mongoose.connect(uri, options)
-            .then(() => console.log('Mongoose Connected'))
+            .then(() => console.log('Connected To MongoDB'))
             .catch((err) => console.error(err))
     }
 }

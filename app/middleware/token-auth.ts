@@ -5,7 +5,7 @@ class TokenAuth {
     public tokenAuth = (req: any, res: Response, next: NextFunction): Response | void  => {
         try {
             const token = req.headers.authorization.split(' ')[1]
-            const decoded = jwt.verify(token, process.env.jwt_secret as Secret)
+            const decoded = jwt.verify(token, process.env.JWT_SECRET as Secret)
             req.userData = decoded
 
             next()
