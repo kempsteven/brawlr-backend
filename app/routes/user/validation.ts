@@ -78,7 +78,6 @@ export const signInValidation: SignInValidation = new SignInValidation()
 class UpdateUserValidation {
     public joiValidation(req: Request, res: Response, next: NextFunction): void | Response {
         const schema = Joi.object({
-            id: Joi.required(),
             firstName: Joi.string().min(2).max(255),
 
             lastName: Joi.string().min(2).max(255),

@@ -10,10 +10,7 @@ const iv = crypto.randomBytes(16)
 const cryptoAlgo = 'aes-256-cbc'
 
 class UserController {
-    private key = crypto.randomBytes(32)
-    private iv = crypto.randomBytes(16)
-    private cryptoAlgo = 'aes-256-cbc'
-
+    /* Sign Up Methods */
     public async signUp(req: Request, res: Response, next: NextFunction): Promise<void | Response> {
         const salt: string = await bcrypt.genSalt(10)
         const hashedPassword: string = await bcrypt.hash(req.body.password, salt)
@@ -265,10 +262,28 @@ class UserController {
         }
     }
 
-    // public async activateAccount(req: Request, res: Response, next: NextFunction): Promise<Response> {
+    /* Account Activation Methods */
+    public async decryptEncryptedLink(req: Request, res: Response, next: NextFunction): Promise<void | Response> {
+        const iv = Buffer.from(req.body.iv, 'hex')
 
-    // }
+        const encryptedText = Buffer.from(req.body.encryptedData, 'hex')
 
+        const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key), iv)
+
+        let decrypted = decipher.update(encryptedText)
+
+        decrypted = Buffer.concat([decrypted, decipher.final()])
+        
+        res.locals.response = { decrypted: decrypted.toString() }
+
+        next()
+    }
+
+    public async activateAccount(req: Request, res: Response, next: NextFunction): Promise<void | Response> {
+        res.send(res.locals.response)
+    }
+
+    /* Sign In Methods */
     public async signIn(req: Request, res: Response): Promise<Response> {
         const user = await userModel.findOne({ email: req.body.email })
 
@@ -293,13 +308,15 @@ class UserController {
         })
     }
 
+    /* Check Token Methods */
     public checkToken(req: Request, res: Response): Response {
         return res.status(200).json({
             message: 'Token Authenticated'
         })
     }
 
-    public async updateUser(req: Request, res: Response): Promise<void | Response> {
+    /* Update User Methods */
+    public async updateUser(req: any, res: Response): Promise<void | Response> {
         const keyToBeUpdated = [
             'firstName', 'lastName', 'bio',
             'gender', 'age', 'fighterType',
@@ -315,13 +332,13 @@ class UserController {
         })
 
         try {
-            await userModel.updateOne({ _id: req.body.id }, { $set: propertyToUpdate })
+            await userModel.updateOne({ _id: req.userData._id }, { $set: propertyToUpdate })
 
             const {
                 _id, firstName, lastName, email,
                 bio, gender, age, fighterType,
                 location, genderPreference, ageRange
-            }: any = await userModel.findById(req.body.id)
+            }: any = await userModel.findById(req.userData._id)
 
             return res.status(200).send({
                 _id, firstName, lastName, email,

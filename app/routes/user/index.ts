@@ -26,14 +26,17 @@ class UserRoutes {
         )
 
         app.route('/user/update-user').post(
+            tokenAuth.tokenAuth,
             formData.uploadNone(),
             updateUserValidation.joiValidation,
             userController.updateUser
         )
 
-        // app.route('/user/account-activation').get(
-        //     userController.activateAccount
-        // )
+        app.route('/user/account-activation').post(
+            formData.uploadNone(),
+            userController.decryptEncryptedLink,
+            userController.activateAccount
+        )
     }
 }
 
