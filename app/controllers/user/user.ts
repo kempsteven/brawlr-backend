@@ -20,11 +20,8 @@ class UserController {
             lastName: req.body.lastName,
             email: req.body.email,
             password: hashedPassword,
-            bio: req.body.bio,
             gender: req.body.gender,
-            age: req.body.age,
-            fighterType: req.body.fighterType,
-            location: req.body.location
+            age: req.body.age
         })
 
         try {
@@ -47,6 +44,7 @@ class UserController {
 
     public async generateEncryptedLink(req: Request, res: Response, next: NextFunction): Promise<void> {
         const cipher = crypto.createCipheriv(cryptoAlgo, Buffer.from(key), iv)
+        
         let encrypted = cipher.update(JSON.stringify(res.locals.response))
 
         encrypted = Buffer.concat([encrypted, cipher.final()])

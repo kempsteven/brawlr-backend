@@ -13,18 +13,12 @@ class SignUpValidation {
 
             password: Joi.string().min(6).max(1024).required(),
 
-            bio: Joi.string().min(0).max(250).allow('', null),
-
             gender: Joi.object({
                 id: Joi.number().valid(0, 1, 2).required(),
-                text: Joi.string().required().min(1).max(25)
+                value: Joi.string().required().min(1).max(25)
             }),
 
-            age: Joi.number().min(0).max(100),
-
-            fighterType: Joi.string().min(2).max(255).required(),
-
-            location: Joi.string().min(2).max(255).required()
+            age: Joi.number().min(0).max(100)
         })
 
         const { error } = schema.validate(req.body)
@@ -86,7 +80,7 @@ class UpdateUserValidation {
 
             gender: Joi.object({
                 id: Joi.number().valid(0, 1, 2).required(),
-                text: Joi.string().required().min(1).max(25)
+                value: Joi.string().required().min(1).max(25)
             }),
 
             age: Joi.number().min(0).max(100),
