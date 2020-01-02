@@ -51,14 +51,12 @@ const userSchema = new Schema({
 
     fighterType: {
         type: String,
-        required: true,
         min: 2,
         max: 255
     },
 
     location: {
         type: String,
-        required: true,
         min: 2,
         max: 255
     },

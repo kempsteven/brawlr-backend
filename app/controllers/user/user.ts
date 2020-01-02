@@ -5,7 +5,7 @@ import jwt, { Secret } from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 
-const key = crypto.randomBytes(32)
+const cryptoKey = 'Yvy1lATGGJ8ffOQFH8leoXXGXao8bQzT'
 const iv = crypto.randomBytes(16)
 const cryptoAlgo = 'aes-256-cbc'
 
@@ -25,12 +25,10 @@ class UserController {
         })
 
         try {
-            const { _id, firstName, lastName, email }: SavedUserDocument = await user.save()
+            const { _id, email }: SavedUserDocument = await user.save()
 
             const response: object = {
                 _id,
-                firstName,
-                lastName,
                 email
             }
 
@@ -43,13 +41,14 @@ class UserController {
     }
 
     public async generateEncryptedLink(req: Request, res: Response, next: NextFunction): Promise<void> {
-        const cipher = crypto.createCipheriv(cryptoAlgo, Buffer.from(key), iv)
+        const cipher = crypto.createCipheriv(cryptoAlgo, Buffer.from(cryptoKey), iv)
         
         let encrypted = cipher.update(JSON.stringify(res.locals.response))
 
         encrypted = Buffer.concat([encrypted, cipher.final()])
 
         const ivString = iv.toString('hex')
+
         const encryptedData = encrypted.toString('hex')
 
         const response = {
@@ -129,9 +128,9 @@ class UserController {
                         width: 450px;
                         border-radius: 5px;
                         margin: 0 auto;
-                        background: #fff;
-                        border: 1px solid #878787;
+                        background: #f6f6f6;
                         color: #878787;
+                        padding-bottom: 15px;
                     "
                 >
                     <h3
@@ -141,7 +140,7 @@ class UserController {
                             width: 100%;
                             text-align: center;
                             margin: 0;
-                            background: #4286f4;
+                            background: #da5555;
                             padding: 15px 0;
                             border-top-left-radius: 5px;
                             border-top-right-radius: 5px;
@@ -253,7 +252,7 @@ class UserController {
                 firstName: response.firstName,
                 lastName: response.lastName,
                 activationLink: response.link,
-                message: 'User created, please activate your account using the link given in your email'
+                message: 'User created, please activate your account using the link sent to your email.'
             })
         } catch (err) {
             return res.status(400).send(err)
@@ -262,23 +261,54 @@ class UserController {
 
     /* Account Activation Methods */
     public async decryptEncryptedLink(req: Request, res: Response, next: NextFunction): Promise<void | Response> {
-        const iv = Buffer.from(req.body.iv, 'hex')
+        try {
+            const iv = Buffer.from(req.body.iv, 'hex')
 
-        const encryptedText = Buffer.from(req.body.encryptedData, 'hex')
+            const encryptedText = Buffer.from(req.body.key, 'hex')
 
-        const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key), iv)
+            const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(cryptoKey), iv)
 
-        let decrypted = decipher.update(encryptedText)
+            let decrypted = decipher.update(encryptedText)
 
-        decrypted = Buffer.concat([decrypted, decipher.final()])
+            decrypted = Buffer.concat([decrypted, decipher.final()])
+
+            res.locals.response = decrypted.toString()
+
+            next()
+        } catch (err) {
+            return res.status(422).json({
+                message: 'Invalid link.'
+            })
+        }
         
-        res.locals.response = { decrypted: decrypted.toString() }
-
-        next()
     }
 
     public async activateAccount(req: Request, res: Response, next: NextFunction): Promise<void | Response> {
-        res.send(res.locals.response)
+        const { _id } = await JSON.parse(res.locals.response)
+
+        const user = await userModel.findOne({ _id })
+
+        if (!user) {
+            return res.status(422).json({
+                message: 'Invalid link.'
+            })
+        }
+
+        if (user.status === 1) {
+            return res.status(200).send({
+                message: 'Account already activated.'
+            })
+        }
+
+        try {
+            await userModel.updateOne({ _id: _id }, { $set: { status: 1 } })
+
+            return res.status(200).send({
+                message: 'Account activated, account can now be used.'
+            })
+        } catch (err) {
+            return res.status(400).send(err)
+        }
     }
 
     /* Sign In Methods */
@@ -287,29 +317,34 @@ class UserController {
 
         if (!user) {
             return res.status(400).json({
-                message: 'Authentication Failed'
+                message: 'Authentication Failed.'
             })
         }
 
         const isPassValid = await bcrypt.compare(req.body.password, user.password)
 
         if (!isPassValid) return res.status(400).json({
-            message: 'Authentication Failed'
+            message: 'Authentication Failed.'
         })
+
+        if (user.status === 0) {
+            return res.status(403).send({
+                message: 'User has not been activated, Please look at your email and click the activation link.'
+            })
+        }
 
         // Create and Assign Token
         const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET as Secret)
 
         return res.status(200).json({
-            token: token,
-            message: 'Logged In Successfully'
+            token: token
         })
     }
 
     /* Check Token Methods */
     public checkToken(req: Request, res: Response): Response {
         return res.status(200).json({
-            message: 'Token Authenticated'
+            message: 'Token Authenticated.'
         })
     }
 
