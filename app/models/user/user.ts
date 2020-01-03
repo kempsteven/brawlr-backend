@@ -5,14 +5,14 @@ const userSchema = new Schema({
         type: String,
         required: true,
         min: 2,
-        max: 255
+        max: 50
     },
 
     lastName: {
         type: String,
         required: true,
         min: 2,
-        max: 255
+        max: 50
     },
 
     email: {
@@ -33,7 +33,8 @@ const userSchema = new Schema({
     bio: {
         type: String,
         min: 0,
-        max: 255
+        max: 200,
+        default: ''
     },
 
     gender: {
@@ -52,13 +53,20 @@ const userSchema = new Schema({
     fighterType: {
         type: String,
         min: 2,
-        max: 255
+        max: 50,
+        default: ''
     },
 
     location: {
+        type: Object,
+        default: () => {}
+    },
+
+    organization: {
         type: String,
         min: 2,
-        max: 255
+        max: 50,
+        default: ''
     },
 
     profilePictures: {
@@ -98,7 +106,7 @@ export interface SavedUserDocument extends Document {
 
     fighterType: string
 
-    location: string
+    location: object
 
     genderPreference: Array<number>
 

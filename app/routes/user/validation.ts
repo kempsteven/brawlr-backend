@@ -5,9 +5,9 @@ import Joi from '@hapi/joi'
 class SignUpValidation {
     public joiValidation (req: Request, res: Response, next: NextFunction): void | Response {
         const schema = Joi.object({
-            firstName: Joi.string().min(2).max(255).required(),
+            firstName: Joi.string().min(2).max(50).required(),
 
-            lastName: Joi.string().min(2).max(255).required(),
+            lastName: Joi.string().min(2).max(50).required(),
 
             email: Joi.string().min(6).max(255).required().email(),
 
@@ -72,11 +72,11 @@ export const signInValidation: SignInValidation = new SignInValidation()
 class UpdateUserValidation {
     public joiValidation(req: Request, res: Response, next: NextFunction): void | Response {
         const schema = Joi.object({
-            firstName: Joi.string().min(2).max(255),
+            firstName: Joi.string().min(2).max(50),
 
-            lastName: Joi.string().min(2).max(255),
+            lastName: Joi.string().min(2).max(50),
 
-            bio: Joi.string().min(0).max(250).allow('', null),
+            bio: Joi.string().min(0).max(200).allow('', null),
 
             gender: Joi.object({
                 id: Joi.number().valid(0, 1, 2).required(),
@@ -85,13 +85,18 @@ class UpdateUserValidation {
 
             age: Joi.number().min(0).max(100),
 
-            fighterType: Joi.string().min(2).max(255),
+            fighterType: Joi.string().min(2).max(50),
 
-            location: Joi.string().min(2).max(255),
+            location: Joi.object({
+                id: Joi.number().required(),
+                value: Joi.string().required().min(1).max(50)
+            }),
 
             genderPreference: Joi.array().min(1).max(3).items(Joi.number().max(2)),
 
-            ageRange: Joi.array().min(1).max(2).items(Joi.number().min(1).max(100))
+            ageRange: Joi.array().min(1).max(2).items(Joi.number().min(1).max(100)),
+
+            organization: Joi.string().min(2).max(50),
         })
 
         const { error } = schema.validate(req.body)
