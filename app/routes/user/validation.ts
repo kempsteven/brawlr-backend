@@ -14,7 +14,7 @@ class SignUpValidation {
             password: Joi.string().min(6).max(1024).required(),
 
             gender: Joi.object({
-                id: Joi.number().valid(0, 1, 2).required(),
+                id: Joi.number().valid(0, 1, 'other-option').required(),
                 value: Joi.string().required().min(1).max(25)
             }),
 
@@ -92,11 +92,21 @@ class UpdateUserValidation {
                 value: Joi.string().required().min(1).max(50)
             }),
 
-            genderPreference: Joi.array().min(1).max(3).items(Joi.number().max(2)),
+            // genderPreference: Joi.array().min(1).max(3).items(Joi.number().max(2)),
+            // ageRange: Joi.array().min(1).max(2).items(Joi.number().min(1).max(100)),
 
-            ageRange: Joi.array().min(1).max(2).items(Joi.number().min(1).max(100)),
+            genderPreference: Joi.object({
+                male: Joi.number().valid(0, 1).required(),
+                female: Joi.number().valid(0, 1).required(),
+                others: Joi.number().valid(0, 1).required(),
+            }),
 
-            organization: Joi.string().min(2).max(50),
+            ageRange: Joi.object({
+                from: Joi.number().min(0).max(99),
+                to: Joi.number().min(1).max(100),
+            }),
+
+            organization: Joi.string().min(0).max(50).allow('', null),
         })
 
         const { error } = schema.validate(req.body)

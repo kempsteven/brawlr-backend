@@ -74,14 +74,35 @@ const userSchema = new Schema({
         default: () => []
     },
 
+    // genderPreference: {
+    //     type: Array,
+    //     default: () => [0, 1, 2]
+    // },
+
+    // ageRange: {
+    //     type: Array,
+    //     default: () => [1, 100]
+    // },
+    
     genderPreference: {
-        type: Array,
-        default: () => [0, 1, 2]
+        type: Object,
+        default: () => {
+            return {
+                male: 1,
+                female: 1,
+                others: 1,
+            }
+        }
     },
 
     ageRange: {
-        type: Array,
-        default: () => [1, 100]
+        type: Object,
+        default: () => {
+            return {
+                from: 1,
+                to: 100,
+            }
+        }
     },
 
     status: {

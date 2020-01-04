@@ -31,7 +31,7 @@ class UserController {
         const propertyToUpdate: any = {}
 
         keyToBeUpdated.forEach(key => {
-            if (req.body[key]) {
+            if (Object.keys(req.body).includes(key)) {
                 propertyToUpdate[key] = req.body[key]
             }
         })
