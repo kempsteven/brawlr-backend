@@ -79,7 +79,7 @@ class UpdateUserValidation {
             bio: Joi.string().min(0).max(200).allow('', null),
 
             gender: Joi.object({
-                id: Joi.number().valid(0, 1, 2).required(),
+                id: Joi.number().valid(0, 1, 'other-option').required(),
                 value: Joi.string().required().min(1).max(25)
             }),
 
