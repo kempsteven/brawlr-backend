@@ -4,6 +4,7 @@ import { Request, Response, NextFunction } from 'express'
 import jwt, { Secret } from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
+import cryptoJs from 'crypto-js'
 
 const cryptoKey = 'Yvy1lATGGJ8ffOQFH8leoXXGXao8bQzT'
 const iv = crypto.randomBytes(16)
@@ -334,8 +335,14 @@ class UserAuthController {
             })
         }
 
+        // Encrypt
+        const offlineSecretKey = cryptoJs.AES.encrypt(
+            process.env.JWT_OFFLINE_SECRET as string,
+            process.env.CRYPTO_SECRET as string
+        )
+
         // Create and Assign Token
-        const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET as Secret)
+        const token = jwt.sign({ _id: user._id, key: `${offlineSecretKey}` }, process.env.JWT_SECRET as Secret, { expiresIn: '14d' })
 
         return res.status(200).json({
             token: token
