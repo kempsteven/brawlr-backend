@@ -52,44 +52,50 @@ class FormData {
         return this.upload.fields([{ name: 'images', maxCount: 6 }])
     }
 
-    public cloudinaryMultipleUpload(req: any, res: Response, next: NextFunction) {
+    public async cloudinaryMultipleUpload(req: any, res: Response, next: NextFunction) {
         const dataUri = new Datauri()
-        console.log(this.upload)
-        return res.send({})
 
-        // const uploadPromises = req.files.images.map((image: FileImage) => {
-        //     const fileExtension = path.extname(image.originalname).toString()
-        //     const imageBuffer = image.buffer
-        //     const fileToUpload = this.dataUri.format(fileExtension, imageBuffer).content
+        cloudinary.config({
+            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+            api_key: process.env.CLOUDINARY_API_KEY,
+            api_secret: process.env.CLOUDINARY_API_SECRET,
+        })
 
-        //     return new Promise((resolve, reject) => {
-        //         cloudinary.uploader.upload(
-        //             fileToUpload,
-        //             { public_id: `brawlr/user/${Date.now()}` },
-        //             (error, result) => {
-        //                 if (error) reject(error)
-        //                 else resolve(result)
-        //             }
-        //         )
-        //     })
-        // })
+        const uploadPromises = req.files.images.map((image: FileImage) => {
+            const fileExtension = path.extname(image.originalname).toString()
+            const imageBuffer = image.buffer
+            const fileToUpload = dataUri.format(fileExtension, imageBuffer).content
 
-        // try {
-        //     const uploadResults = await Promise.all(uploadPromises)
+            return new Promise((resolve, reject) => {
+                cloudinary.uploader.upload(
+                    fileToUpload,
+                    { public_id: `user/${Date.now()}` },
+                    (error, result) => {
+                        if (!!error) reject(error)
+                        else resolve(result)
+                    }
+                )
+            })
+        })
 
-        //     uploadResults.forEach((item: any) => {
-        //         req.body.imgFileObj.push({
-        //             publicId: item.public_id,
-        //             url: item.secure_url
-        //         })
-        //     })
+        try {
+            const uploadedImages: any = await Promise.all(uploadPromises)
+
+            req.body.imgFileObj = []
+
+            Object.keys(uploadedImages).forEach((key) => {
+                req.body.imgFileObj.push({
+                    publicId: uploadedImages[parseInt(key)].public_id,
+                    url: uploadedImages[parseInt(key)].secure_url
+                })
+            })
             
-        //     next()
-        // } catch (error) {
-        //     return res.status(500).json({
-        //         error: error
-        //     })
-        // }
+            next()
+        } catch (error) {
+            return res.status(500).json({
+                error: error
+            })
+        }
     }
 }
 
