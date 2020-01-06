@@ -51,6 +51,13 @@ class UserRoutes {
             updateUserValidation.joiValidation,
             userController.updateUser
         )
+
+        app.route('/user/update-user-images').post(
+            tokenAuth.tokenAuth,
+            formData.multerUploadFields(),
+            formData.cloudinaryMultipleUpload,
+            userController.updateUserImages
+        )
     }
 }
 

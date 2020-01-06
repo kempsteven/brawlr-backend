@@ -46,6 +46,10 @@ class UserController {
             return res.status(400).send(err)
         }
     }
+
+    public async updateUserImages (req: any, res: Response): Promise<void | Response> {
+        return res.send(req.body.imgFileObj)
+    }
 }
 
 export const userController: UserController = new UserController()
