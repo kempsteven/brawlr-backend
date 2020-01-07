@@ -9,57 +9,47 @@ interface FileImage {
     buffer: Buffer
 }
 
+const storage = multer.memoryStorage()
+
+const fileFilter = (req: Request, file: Express.Multer.File, cb: CallableFunction) => {
+    let allowedMimeType = ['image/webp', 'image/jpeg', 'image/png']
+
+    if (allowedMimeType.indexOf(file.mimetype) > -1) {
+        cb(null, true)
+    } else {
+        return cb(new Error('Only ' + allowedMimeType.join(", ") + ' files are allowed!'));
+    }
+}
+
+const multerOptions: multer.Options = {
+    storage: storage,
+
+    limits: {
+        fileSize: 1024 * 1024 * 5
+    },
+
+    fileFilter: fileFilter
+}
+
+const upload = multer(multerOptions)
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+})
+
 class FormData {
-    private storage = multer.memoryStorage()
-
-    private fileFilter = (req: Request, file: Express.Multer.File, cb: CallableFunction) => {
-        let allowedMimeType = ['image/webp', 'image/jpeg', 'image/png']
-
-        if (allowedMimeType.indexOf(file.mimetype) > -1) {
-            cb(null, true)
-        } else {
-            return cb(new Error('Only ' + allowedMimeType.join(", ") + ' files are allowed!'));
-        }
-    }
-
-    private multerOptions: multer.Options = {
-        storage: this.storage,
-
-        limits: {
-            fileSize: 1024 * 1024 * 5
-        },
-
-        fileFilter: this.fileFilter
-    }
-
-    private upload = multer(this.multerOptions)
-
-    private dataUri = new Datauri()
-
-    constructor () {
-        cloudinary.config({
-            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-            api_key: process.env.CLOUDINARY_API_KEY,
-            api_secret: process.env.CLOUDINARY_API_SECRET,
-        })
-    }
-
     public uploadNone () {
-        return this.upload.none()
+        return upload.none()
     }
 
     public multerUploadFields() {
-        return this.upload.fields([{ name: 'images', maxCount: 6 }])
+        return upload.fields([{ name: 'images', maxCount: 6 }])
     }
 
     public async cloudinaryMultipleUpload(req: any, res: Response, next: NextFunction) {
         const dataUri = new Datauri()
-
-        cloudinary.config({
-            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-            api_key: process.env.CLOUDINARY_API_KEY,
-            api_secret: process.env.CLOUDINARY_API_SECRET,
-        })
 
         const uploadPromises = req.files.images.map((image: FileImage) => {
             const fileExtension = path.extname(image.originalname).toString()
@@ -69,7 +59,7 @@ class FormData {
             return new Promise((resolve, reject) => {
                 cloudinary.uploader.upload(
                     fileToUpload,
-                    { public_id: `user/${Date.now()}` },
+                    { public_id: `user/${req.userData._id}/${Date.now()}` },
                     (error, result) => {
                         if (!!error) reject(error)
                         else resolve(result)
@@ -95,6 +85,32 @@ class FormData {
             return res.status(500).json({
                 error: error
             })
+        }
+    }
+
+    public async cloudinaryRemoveImage(req: any, res: Response, next: NextFunction) {
+        const imageIdToBeRemoved = req.body.imageIdToBeRemoved
+        
+        const deletionPromise = imageIdToBeRemoved.map((id: string) => {
+            return new Promise((resolve, reject) => {
+                cloudinary.uploader.destroy(
+                    id,
+                    (error, result) => {
+                        if (!!error) reject(error)
+                        else resolve(result)
+                    }
+                )
+            })
+        })
+
+        try {
+            const result = await Promise.all(deletionPromise)
+            
+            res.status(200).send({
+                message: res.locals.response
+            })
+        } catch (error) {
+            res.status(400).send(error)
         }
     }
 }

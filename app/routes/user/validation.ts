@@ -123,4 +123,51 @@ class UpdateUserValidation {
 
 export const updateUserValidation: UpdateUserValidation = new UpdateUserValidation()
 
+class UpdateUserImageValidation {
+    public joiValidation(req: Request, res: Response, next: NextFunction): void | Response {
+        const schema = Joi.object({
+            position: Joi.array().min(0).max(6).items(Joi.number().min(1).max(6))
+        })
+
+        const { error } = schema.validate(req.body)
+
+        if (error) {
+            return res.status(422).json({
+                message: error.details[0].message.replace(/"/g, '')
+            })
+        }
+
+        next()
+    }
+
+    public async isImagePositionValid(req: any, res: Response, next: NextFunction): Promise<void | Response> {
+        const imagePosition = await userModel.find(
+                                {
+                                    _id: req.userData._id,
+                                    profilePictures: {
+                                        $elemMatch: {
+                                            position: { $in: req.body.position }
+                                        }
+                                    }
+                                }
+                            )
+                            
+        if (imagePosition) {
+            return res.status(400).send({
+                message: 'Image position is not available, please remove the existing image first'
+            })
+        }
+
+        if (!req.body.position.every((pos: string) => parseInt(pos) <= 6)) {
+            return res.status(400).send({
+                message: 'Image position is not valid'
+            })
+        }                   
+
+        next()
+    }
+}
+
+export const updateUserImageValidation: UpdateUserImageValidation = new UpdateUserImageValidation()
+
 

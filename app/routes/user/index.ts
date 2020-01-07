@@ -7,7 +7,8 @@ import { tokenAuth } from '../../middleware/token-auth'
 import {
     signUpValidation,
     signInValidation,
-    updateUserValidation
+    updateUserValidation,
+    updateUserImageValidation
 } from './validation'
 
 class UserRoutes {
@@ -52,11 +53,19 @@ class UserRoutes {
             userController.updateUser
         )
 
-        app.route('/user/update-user-images').post(
+        app.route('/user/update-user-image').post(
             tokenAuth.tokenAuth,
             formData.multerUploadFields(),
+            updateUserImageValidation.isImagePositionValid,
             formData.cloudinaryMultipleUpload,
             userController.updateUserImages
+        )
+
+        app.route('/user/remove-user-image').post(
+            tokenAuth.tokenAuth,
+            formData.uploadNone(),
+            userController.removeUserImage,
+            formData.cloudinaryRemoveImage
         )
     }
 }
