@@ -106,9 +106,7 @@ class FormData {
         try {
             const result = await Promise.all(deletionPromise)
             
-            res.status(200).send({
-                message: res.locals.response
-            })
+            res.status(200).send(res.locals.response)
         } catch (error) {
             res.status(400).send(error)
         }

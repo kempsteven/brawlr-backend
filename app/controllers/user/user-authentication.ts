@@ -250,9 +250,6 @@ class UserAuthController {
             })
 
             return res.status(200).send({
-                firstName: response.firstName,
-                lastName: response.lastName,
-                activationLink: response.link,
                 message: 'User created, please activate your account using the link sent to your email.'
             })
         } catch (err) {

@@ -151,8 +151,8 @@ class UpdateUserImageValidation {
                                     }
                                 }
                             )
-                            
-        if (imagePosition) {
+
+        if (imagePosition && imagePosition.length) {
             return res.status(400).send({
                 message: 'Image position is not available, please remove the existing image first'
             })
