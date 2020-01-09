@@ -70,7 +70,8 @@ class UserController {
             const user: any = await userModel
                                         .findById({ _id: req.userData._id })
                                         .select('-__v -password -status')
-
+            
+s
             return res.status(200).send(user)
         } catch (err) {
             return res.status(400).send(err)

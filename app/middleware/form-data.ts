@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import multer from 'multer'
 import path from 'path'
-import Datauri from 'datauri'
+// // import Datauri from 'datauri'
 import { v2 as cloudinary }  from 'cloudinary'
 
 interface FileImage {
@@ -49,13 +49,14 @@ class FormData {
     }
 
     public async cloudinaryMultipleUpload(req: any, res: Response, next: NextFunction) {
-        const dataUri = new Datauri()
+        // // const dataUri = new Datauri()
 
         const uploadPromises = req.files.images.map((image: FileImage) => {
             const fileExtension = path.extname(image.originalname).toString()
             const imageBuffer = image.buffer
-            const fileToUpload = dataUri.format(fileExtension, imageBuffer).content
-
+            // const fileToUpload = dataUri.format(fileExtension, imageBuffer).content
+            const fileToUpload = ''
+            
             return new Promise((resolve, reject) => {
                 cloudinary.uploader.upload(
                     fileToUpload,
