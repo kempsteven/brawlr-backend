@@ -68,7 +68,7 @@ class UserController {
             await userModel.updateOne({ _id: req.userData._id }, { $set: propertyToUpdate })
 
             const user: any = await userModel
-                                        .findById(req.userData._id)
+                                        .findById({ _id: req.userData._id })
                                         .select('-__v -password -status')
 
             return res.status(200).send(user)

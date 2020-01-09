@@ -126,6 +126,7 @@ export const updateUserValidation: UpdateUserValidation = new UpdateUserValidati
 class UpdateUserImageValidation {
     public joiValidation(req: Request, res: Response, next: NextFunction): void | Response {
         const schema = Joi.object({
+            // unique oisition number
             position: Joi.array().min(0).max(6).items(Joi.number().min(1).max(6))
         })
 
