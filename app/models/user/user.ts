@@ -71,18 +71,15 @@ const userSchema = new Schema({
 
     profilePictures: {
         type: Array,
-        default: () => []
+        default: () => [
+            { position: 1, image: null },
+            { position: 2, image: null },
+            { position: 3, image: null },
+            { position: 4, image: null },
+            { position: 5, image: null },
+            { position: 6, image: null },
+        ]
     },
-
-    // genderPreference: {
-    //     type: Array,
-    //     default: () => [0, 1, 2]
-    // },
-
-    // ageRange: {
-    //     type: Array,
-    //     default: () => [1, 100]
-    // },
     
     genderPreference: {
         type: Object,
@@ -110,7 +107,10 @@ const userSchema = new Schema({
         default: 0
     }
 }, { timestamps: true })
+
 export interface SavedUserDocument extends Document {
+    image: any
+
     firstName: string
 
     lastName: string
@@ -128,6 +128,8 @@ export interface SavedUserDocument extends Document {
     fighterType: string
 
     location: object
+
+    profilePictures: Array<{ position: number, image: string }>
 
     genderPreference: Array<number>
 

@@ -2,7 +2,7 @@ import { userModel, SavedUserDocument } from '../../models/user/user'
 import { Request, Response, NextFunction } from 'express'
 
 interface ProfilePictureProperty {
-    profilePictures: Array<object>
+    // profilePictures: Array<object>
 }
 
 class UserController {
@@ -53,19 +53,50 @@ class UserController {
 
     /* Update User Image Methods */
     public async updateUserImages (req: any, res: Response): Promise<void | Response> {
-        const propertyToUpdate: ProfilePictureProperty = {
-            profilePictures: []
+        const filterIdentifier = [
+            'zero', 'one', 'two',
+            'three', 'four', 'five'
+        ]
+
+        const setObject: any = {
+            $set: {}
         }
 
-        req.body.position.forEach((x: number, key: number) => {
-            propertyToUpdate.profilePictures.push({
-                position: x,
-                image: req.body.imgFileObj[key]
-            })
+        const arrayFilterObject: any = {
+            arrayFilters: []
+        }
+        
+        /*
+            this forEach parses data for setting $set and arrayfilters for userModel.update
+                Sample Outcome:
+
+                setObject: {
+                    '$set': {
+                        profilePictures.$[zero].image: 'imageValuehehe'
+                    }
+                }
+
+                arrayFilterObject: {
+                    arrayFilters: [
+                        { 'zero.position': 1 }
+                    ]
+                }
+        */
+        req.body.position.forEach((x: string, key: number) => {
+            const setProperty = `profilePictures.$[${filterIdentifier[key]}].image`
+            const imageObject = req.body.imgFileObj[key]
+            setObject['$set'][setProperty] = imageObject
+
+            const filterProperty = `${filterIdentifier[key]}.position`
+            arrayFilterObject['arrayFilters'].push({ [filterProperty]: parseInt(x) })
         })
 
         try {
-            await userModel.updateOne({ _id: req.userData._id }, { $set: propertyToUpdate })
+            await userModel.updateOne(
+                { _id: req.userData._id },
+                setObject,
+                arrayFilterObject
+            )
 
             const user: any = await userModel
                                         .findById({ _id: req.userData._id })
@@ -80,38 +111,60 @@ class UserController {
 
     /* Remove User Image Method */
     public async removeUserImage (req: any, res: Response, next: NextFunction): Promise<void | Response> {
+        const filterIdentifier = [
+            'zero', 'one', 'two',
+            'three', 'four', 'five'
+        ]
+
+        const setObject: any = {
+            $set: {}
+        }
+
+        const arrayFilterObject: any = {
+            arrayFilters: []
+        }
+
         const imageIdToBeRemoved: Array<string> = []
 
-        try {
-            const ImgPositionToRemove: Array<string> = []
-            
-            const profilePicture: any = req.body.profilePictures
+        /*
+            this forEach parses data for setting $set and arrayfilters for userModel.update
+                Sample Outcome:
 
-            Object.keys(profilePicture).forEach(key => {
-                const picture = profilePicture[key]
-                
-                ImgPositionToRemove.push(`${picture.position}`)
-                imageIdToBeRemoved.push(picture.image)
-            })
-
-            await userModel.updateOne(
-                { _id: req.userData._id },
-                {
-                    $pull: {
-                        profilePictures: {
-                            position: {
-                                $in: ImgPositionToRemove
-                            }
-                        }
+                setObject: {
+                    '$set': {
+                        profilePictures.$[zero].image: 'imageValuehehe'
                     }
                 }
-            )
 
-            req.body.imageIdToBeRemoved = imageIdToBeRemoved
+                arrayFilterObject: {
+                    arrayFilters: [
+                        { 'zero.position': 1 }
+                    ]
+                }
+        */
+        req.body.profilePictures.forEach((item: any, key: number) => {
+            const setProperty = `profilePictures.$[${filterIdentifier[key]}].image`
+            setObject['$set'][setProperty] = null
 
-            const user = await userModel.findById({ _id: req.userData._id }).select('-__v -password -status')
+            const filterProperty = `${filterIdentifier[key]}.position`
+            arrayFilterObject['arrayFilters'].push({ [filterProperty]: parseInt(item.position) })
+
+            imageIdToBeRemoved.push(item.image)
+        })
+
+        try {
+            await userModel.updateOne(
+                                { _id: req.userData._id },
+                                setObject,
+                                arrayFilterObject
+                            )
+
+            const user: any = await userModel
+                                        .findById({ _id: req.userData._id })
+                                        .select('-__v -password -status')
 
             res.locals.response = user
+            req.body.imageIdToBeRemoved = imageIdToBeRemoved
 
             next()
         } catch (err) {

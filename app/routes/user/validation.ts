@@ -142,16 +142,15 @@ class UpdateUserImageValidation {
     }
 
     public async isImagePositionValid(req: any, res: Response, next: NextFunction): Promise<void | Response> {
-        const imagePosition = await userModel.find(
+        const imagePosition = await userModel.findOne(
                                 {
                                     _id: req.userData._id,
-                                    profilePictures: {
-                                        $elemMatch: {
-                                            position: { $in: req.body.position }
-                                        }
-                                    }
+                                    profilePictures: { $in: { position: 1 } }
                                 }
                             )
+                            
+        
+        return res.status(200).send(imagePosition)
 
         if (imagePosition && imagePosition.length) {
             return res.status(400).send({
@@ -170,5 +169,65 @@ class UpdateUserImageValidation {
 }
 
 export const updateUserImageValidation: UpdateUserImageValidation = new UpdateUserImageValidation()
+
+class RemoveUserImageValidation {
+    public joiValidation(req: Request, res: Response, next: NextFunction): void | Response {
+        const schema = Joi.object({
+            profilePictures: Joi.array().min(1).max(6).items(
+                Joi.object({
+                    position: Joi.number().valid(1, 2, 3, 4, 5, 6).required(),
+                    image: Joi.string().required()
+                })
+            ).unique((a, b) => a.position === b.position)
+        })
+
+        const { error } = schema.validate(req.body)
+
+        if (error) {
+            return res.status(422).json({
+                message: error.details[0].message.replace(/"/g, '')
+            })
+        }
+
+        next()
+    }
+
+    public async isImageDeleted(req: any, res: Response, next: NextFunction): Promise<void | Response> {
+        try {
+            const { profilePictures }: any = await userModel
+                .findOne({ _id: req.userData._id })
+                .select('profilePictures')
+
+            if (!profilePictures || !profilePictures.length) {
+                return res.status(400).send({
+                    message: 'Something went wrong'
+                })
+            }
+
+            for (const { position } of req.body.profilePictures) {
+                const imageObject = profilePictures
+                    .find((x: any) => parseInt(x.position) === parseInt(position))
+
+                if (!imageObject) {
+                    return res.status(400).send({
+                        message: 'Something went wrong'
+                    })
+                }
+
+                if (imageObject.image === null) {
+                    return res.status(400).send({
+                        message: 'Image already deleted.'
+                    })
+                }
+            }
+
+            next()
+        } catch (error) {
+            return res.status(400).send(error)
+        }
+    }
+}
+
+export const removeUserImageValidation: RemoveUserImageValidation = new RemoveUserImageValidation()
 
 

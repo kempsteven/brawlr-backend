@@ -8,7 +8,8 @@ import {
     signUpValidation,
     signInValidation,
     updateUserValidation,
-    updateUserImageValidation
+    updateUserImageValidation,
+    removeUserImageValidation
 } from './validation'
 
 class UserRoutes {
@@ -55,15 +56,17 @@ class UserRoutes {
 
         app.route('/user/update-user-image').post(
             tokenAuth.tokenAuth,
-            // formData.multerUploadFields(),
+            formData.multerUploadFields(),
             // updateUserImageValidation.isImagePositionValid,
-            // formData.cloudinaryMultipleUpload,
-            // userController.updateUserImages
+            formData.cloudinaryMultipleUpload,
+            userController.updateUserImages
         )
 
         app.route('/user/remove-user-image').post(
             tokenAuth.tokenAuth,
             formData.uploadNone(),
+            removeUserImageValidation.joiValidation,
+            removeUserImageValidation.isImageDeleted,
             userController.removeUserImage,
             formData.cloudinaryRemoveImage
         )
