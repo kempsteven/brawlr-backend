@@ -57,7 +57,7 @@ class UserRoutes {
         app.route('/user/update-user-image').post(
             tokenAuth.tokenAuth,
             formData.multerUploadFields(),
-            // updateUserImageValidation.isImagePositionValid,
+            updateUserImageValidation.isImagePositionValid,
             formData.cloudinaryMultipleUpload,
             userController.updateUserImages
         )

@@ -142,17 +142,36 @@ class UpdateUserImageValidation {
     }
 
     public async isImagePositionValid(req: any, res: Response, next: NextFunction): Promise<void | Response> {
-        const imagePosition = await userModel.findOne(
-                                {
-                                    _id: req.userData._id,
-                                    profilePictures: { $in: { position: 1 } }
-                                }
-                            )
-                            
-        
-        return res.status(200).send(imagePosition)
+        // const imagePosition = await userModel.findOne(
+        //                         {
+        //                             _id: req.userData._id,
 
-        if (imagePosition && imagePosition.length) {
+        //                         // $and: [
+        //                         //     { 'profilePictures.position': 1 },
+        //                         //     { 'profilePictures.image': null }
+        //                         // ]
+
+        //                             profilePictures: {
+        //                                 $elemMatch: {
+        //                                     $and: [
+        //                                         { position: 6, image: null },
+        //                                         // { position: 5, image: null }
+        //                                     ]
+        //                                 } 
+        //                             }
+        //                         }
+        //                     )
+
+        const user: any = await userModel.findOne({ _id: req.userData._id })
+        let isAllPositionAvailable = true
+        
+        for (const position of req.body.position) {
+            isAllPositionAvailable = user.profilePictures.find((x: any) => x.position === parseInt(position)).image === null
+            
+            if (!isAllPositionAvailable) break
+        }
+
+        if (!isAllPositionAvailable) {
             return res.status(400).send({
                 message: 'Image position is not available, please remove the existing image first'
             })
