@@ -142,26 +142,6 @@ class UpdateUserImageValidation {
     }
 
     public async isImagePositionValid(req: any, res: Response, next: NextFunction): Promise<void | Response> {
-        // const imagePosition = await userModel.findOne(
-        //                         {
-        //                             _id: req.userData._id,
-
-        //                         // $and: [
-        //                         //     { 'profilePictures.position': 1 },
-        //                         //     { 'profilePictures.image': null }
-        //                         // ]
-
-        //                             profilePictures: {
-        //                                 $elemMatch: {
-        //                                     $and: [
-        //                                         { position: 6, image: null },
-        //                                         // { position: 5, image: null }
-        //                                     ]
-        //                                 } 
-        //                             }
-        //                         }
-        //                     )
-
         const user: any = await userModel.findOne({ _id: req.userData._id })
         let isAllPositionAvailable = true
         
@@ -214,8 +194,8 @@ class RemoveUserImageValidation {
     public async isImageDeleted(req: any, res: Response, next: NextFunction): Promise<void | Response> {
         try {
             const { profilePictures }: any = await userModel
-                .findOne({ _id: req.userData._id })
-                .select('profilePictures')
+                                                    .findOne({ _id: req.userData._id })
+                                                    .select('profilePictures')
 
             if (!profilePictures || !profilePictures.length) {
                 return res.status(400).send({
@@ -225,7 +205,9 @@ class RemoveUserImageValidation {
 
             for (const { position } of req.body.profilePictures) {
                 const imageObject = profilePictures
-                    .find((x: any) => parseInt(x.position) === parseInt(position))
+                                        .find((x: any) => {
+                                            return parseInt(x.position) === parseInt(position)
+                                        })
 
                 if (!imageObject) {
                     return res.status(400).send({
