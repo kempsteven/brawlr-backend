@@ -18,20 +18,22 @@ class MatchController {
                                                 // if genderPreference[gender] equal to 0, it would be false and viseversa
                                                 const genderValue = !!+genderPreference[gender]
                                                 
-                                                if (genderValue) result.push({ 'gender.id': `${index}` })
+                                                if (genderValue) result.push({ 'gender.id': `${index === 2 ? 'other-option' : index}` })
 
                                                 return result
                                             }, [])
 
             const userPreference = {
                 $and: [
-                    { age: { $gte: parseInt(ageRange.from) - 1 } },
-                    { age: { $lte: parseInt(ageRange.to) + 1 } }
+                    { age: { $gte: parseInt(ageRange.from) } },
+                    { age: { $lte: parseInt(ageRange.to) } }
                 ],
                 
                 $or: [
                     ...userGenderPreference
-                ]
+                ],
+
+                _id: { $nin: req.userData._id }
             }
 
             const userList = await userModel
