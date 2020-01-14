@@ -1,7 +1,9 @@
-import app from './app'
+import app, { socketSetUp } from './app'
 
 const port = process.env.PORT || 3000
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
     console.log(`App is Running in localhost:${port}`)
 })
+
+socketSetUp(server)
