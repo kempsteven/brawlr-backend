@@ -5,9 +5,9 @@ import Joi from '@hapi/joi'
 class SignUpValidation {
     public joiValidation (req: Request, res: Response, next: NextFunction): void | Response {
         const schema = Joi.object({
-            firstName: Joi.string().min(2).max(50).required(),
+            firstName: Joi.string().min(2).max(25).required(),
 
-            lastName: Joi.string().min(2).max(50).required(),
+            lastName: Joi.string().min(2).max(25).required(),
 
             email: Joi.string().min(6).max(255).required().email(),
 
@@ -72,9 +72,9 @@ export const signInValidation: SignInValidation = new SignInValidation()
 class UpdateUserValidation {
     public joiValidation(req: Request, res: Response, next: NextFunction): void | Response {
         const schema = Joi.object({
-            firstName: Joi.string().min(2).max(50),
+            firstName: Joi.string().min(2).max(25),
 
-            lastName: Joi.string().min(2).max(50),
+            lastName: Joi.string().min(2).max(25),
 
             bio: Joi.string().min(0).max(200).allow('', null),
 
@@ -85,7 +85,7 @@ class UpdateUserValidation {
 
             age: Joi.number().min(0).max(100),
 
-            fighterType: Joi.string().min(2).max(50),
+            fighterType: Joi.string().min(2).max(25),
 
             location: Joi.object({
                 id: Joi.number().required(),
@@ -106,7 +106,7 @@ class UpdateUserValidation {
                 to: Joi.number().min(1).max(100),
             }),
 
-            organization: Joi.string().min(0).max(50).allow('', null),
+            organization: Joi.string().min(0).max(25).allow('', null),
         })
 
         const { error } = schema.validate(req.body)
