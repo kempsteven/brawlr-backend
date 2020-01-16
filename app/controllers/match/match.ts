@@ -91,7 +91,7 @@ class MatchController {
                                         challengerId: req.body.challengedId,
                                         challengedId: req.userData._id
                                     },
-                                    { hasMatched: false }
+                                    { hasMatched: true }
                                 )
                                 
             if (match) {
@@ -127,20 +127,16 @@ class MatchController {
                                     }).select('_id firstName lastName profilePictures')
 
         if (!matchedUsers || matchedUsers.length !== 2) return res.status(404).send({ message: 'One/Both of the users cannot be found' })
-        // console.log(matchedUsers, req.userData._id)
+
         const currentUser = matchedUsers.find(user => `${user._id}` === req.userData._id)
         const currentUserId = currentUser?._id
         const currentUserName = currentUser?.firstName
         const currentUserPicture = currentUser?.profilePictures.find(pic => pic.image !== null)?.image.url || null
 
-        console.log(currentUserId, currentUserName, currentUserPicture)
-
         const matchedUser = matchedUsers.find(user => `${user._id}` === req.body.challengedId)
         const matchedUserId = matchedUser?._id
         const matchedUserName = matchedUser?.firstName
         const matchedUserPicture = matchedUser?.profilePictures.find(pic => pic.image !== null)?.image.url || null
-
-        console.log(matchedUserId, matchedUserName, matchedUserPicture)
 
         const socketResponse = {
             currentUserId,
