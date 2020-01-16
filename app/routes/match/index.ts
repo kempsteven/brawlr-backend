@@ -25,7 +25,14 @@ class MatchRoutes {
             matchValidation.joiValidation,
             matchValidation.isObjectIdsValid,
             matchController.isChallengedHasChallengedUser,
+            matchController.setUpSocketResponse,
             matchController.challengeUser
+        )
+
+        app.route('/match/test-socket').post(
+            tokenAuth.tokenAuth,
+            formData.uploadNone(),
+            matchController.test,
         )
     }
 }

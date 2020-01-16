@@ -2,14 +2,11 @@ import express from 'express'
 import bodyParser from 'body-parser'
 import mongoose from 'mongoose'
 import morgan from 'morgan'
-import socketIo from 'socket.io'
-import { Server } from 'http'
-
 import { Routes } from './routes'
-
 class App {
     public app : express.Application
     public routePrv : Routes = new Routes()
+    public _io: any
 
     constructor () {
         this.app = express()
@@ -20,10 +17,6 @@ class App {
 
     private config () : void {
         this.app.use((req, res, next) => {
-            // res.header('Access-Control-Allow-Origin', '*')
-            // res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept')
-            // res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE')
-
             res.header('Access-Control-Allow-Origin', '*')
             res.header(
                 'Access-Control-Allow-Headers',
@@ -79,19 +72,25 @@ class App {
         mongoose.connect(uri, options)
             .then(() => console.log('Connected To MongoDB'))
             .catch((err) => console.error(err))
+
+        /* 
+            useFindAndModify': true by default. Set to false to make findOneAndUpdate()
+            and findOneAndRemove() use native findOneAndUpdate() rather than findAndModify().
+        */
+        mongoose.set('useFindAndModify', false);
     }
 }
 
 export default new App().app;
 
-export const socketSetUp = (app: Server): void => {
-    const io = socketIo(app)
+// export const socketSetUp = (app: Server): void => {
+//     const io = socketIo(app)
 
-    io.on('connection', (socket) => {
-        console.log(`User Connected - ${socket}`)
+//     io.on('connection', (socket) => {
+//         console.log(`User Connected - ${socket.id}`)
 
-        socket.on('new_message', (data) => {
-            io.sockets.emit('new_message', { data })
-        })
-    })
-}
+//         socket.on('new_message', (data) => {
+//             io.sockets.emit('new_message', { data })
+//         })
+//     })
+// }

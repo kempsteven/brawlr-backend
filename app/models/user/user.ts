@@ -129,7 +129,14 @@ export interface SavedUserDocument extends Document {
 
     location: object
 
-    profilePictures: Array<{ position: number, image: string }>
+    profilePictures: Array<{
+        position: number,
+        
+        image: {
+            publicId: string,
+            url: string
+        }
+    }>
 
     genderPreference: Array<number>
 
