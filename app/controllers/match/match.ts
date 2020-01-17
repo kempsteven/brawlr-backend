@@ -4,17 +4,20 @@ import { Request, Response, NextFunction } from 'express'
 
 import { io } from '../../server'
 
+import { Types } from 'mongoose'
+
 class MatchController {
     /* Get User List Methods */
     public async getUserList(req: any, res: Response, next: NextFunction) {
         const selectedField = 'firstName lastName bio fighterType organization profilePictures gender age location'
 
         try {
-            // Setting user preferences for user list
+            /* Setting user preferences for user list */
             const { genderPreference, ageRange }: any = await userModel
-                                .findById({ _id: req.userData._id })
-                                .select('genderPreference ageRange')
-
+                                                                .findById({ _id: req.userData._id })
+                                                                .select('genderPreference ageRange')
+            
+            /* For Users Gender Preference  */
             const userGenderPreference = Object.keys(genderPreference)
                                             .reduce((result: Array<object>, gender: string, index: number) => {
                                                 // if genderPreference[gender] equal to 0, it would be false and viseversa
@@ -25,6 +28,49 @@ class MatchController {
                                                 return result
                                             }, [])
 
+            /* Getting the Id's of Matched user and not including it on the list */
+            const findObject = {
+                $or: [
+                    { challengerId: req.userData._id },
+                    { challengedId: req.userData._id }
+                ],
+
+                hasMatched: true
+            }
+
+            const matchSelectedField = 'challengerId challengedId'
+
+            const matchList = await matchModel
+                                        .find(findObject)
+                                        .select(matchSelectedField)
+
+            const currentUserId = `${req.userData._id}`
+
+            let userIdNotIncluded = [ currentUserId ]
+
+            if (matchList.length) {
+                userIdNotIncluded = [
+                    ...userIdNotIncluded,
+                    ...matchList.reduce((result: Array<string>, item) => {
+                        const challengerId = `${item.challengerId}`
+                        const challengedId = `${item.challengedId}`
+
+                        if (challengerId !== currentUserId) {
+
+                            result.push(challengerId)
+
+                        } else if (challengedId !== currentUserId) {
+
+                            result.push(challengedId)
+                            
+                        }
+
+                        return result
+                    }, [])
+                ]
+            }
+            
+            /* Setting User Preference Object to be passed on .find() */
             const userPreference = {
                 $and: [
                     { age: { $gte: parseInt(ageRange.from) } },
@@ -35,7 +81,7 @@ class MatchController {
                     ...userGenderPreference
                 ],
 
-                _id: { $nin: req.userData._id }
+                _id: { $nin: userIdNotIncluded }
             }
 
             const userList = await userModel
@@ -186,40 +232,39 @@ class MatchController {
     }
 
     public async test(req: any, res: Response, next: NextFunction) {
+        const findObject = {
+            $or: [
+                { challengerId: req.userData._id },
+                { challengedId: req.userData._id }
+            ],
 
-        // io.sockets.emit(`${req.userData._id}_new_match`, { message: 'hello nibba' })
-
-        const matchedUsers = await userModel.find({
-                                        '_id': {
-                                            $in: [
-                                                '5e1c4c45b943e4001ee894d3',
-                                                '5e1c4426b943e4001ee894d2'
-                                            ]
-                                        }
-                                    }).select('firstName lastName profilePictures')
-
-        const currentUser = matchedUsers[0]
-        const currentUserId = currentUser._id
-        const currentUserName = currentUser.firstName
-        const currentUserPicture = currentUser.profilePictures.find(pic => pic.image !== null)?.image.url || null
-
-        const matchedUser = matchedUsers[1]
-        const matchedUserId = matchedUser._id
-        const matchedUserName = matchedUser.firstName
-        const matchedUserPicture = matchedUser.profilePictures.find(pic => pic.image !== null)?.image.url || null
-
-        const test = {
-            currentUserId,
-            currentUserName,
-            currentUserPicture,
-            matchedUserId,
-            matchedUserName,
-            matchedUserPicture
+            hasMatched: true
         }
 
-        return res.status(200).send(test)
+        const selectedField = 'challengerId challengedId'
 
-        return res.status(200).send({})
+        const matchList = await matchModel
+                                    .find(findObject)
+                                    .select(selectedField)
+        
+        let userIdNotIncluded = [ req.userData._id ]
+
+        if (matchList.length) {
+            userIdNotIncluded = [
+                ...userIdNotIncluded,
+                ...matchList.reduce((result: Array<Types.ObjectId>, item) => {
+                    if (item.challengerId !== req.userData._id) {
+                        result.push(item.challengerId)
+                    } else if (item.challengedId !== req.userData._id) {
+                        result.push(item.challengedId)
+                    }
+
+                    return result
+                }, [])
+            ]
+        }
+
+        return res.status(200).send(userIdNotIncluded)
     }
 }
 
