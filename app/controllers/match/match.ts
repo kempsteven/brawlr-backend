@@ -7,7 +7,7 @@ import { io } from '../../server'
 class MatchController {
     /* Get User List Methods */
     public async getUserList(req: any, res: Response, next: NextFunction) {
-        const selectedField = 'firstName lastName bio fighterType organization profilePictures gender age'
+        const selectedField = 'firstName lastName bio fighterType organization profilePictures gender age location'
 
         try {
             // Setting user preferences for user list
