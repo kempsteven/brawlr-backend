@@ -1,3 +1,4 @@
+import mongoosePaginate from 'mongoose-paginate-v2'
 import { Schema, model, Document, Types } from 'mongoose'
 import { number } from 'joi'
 
@@ -31,4 +32,4 @@ export interface MatchDocument extends Document {
     hasMatched: Boolean
 }
 
-export const matchModel = model<MatchDocument>('Match', matchSchema)
+export const matchModel = model<MatchDocument>('Match', matchSchema.plugin(mongoosePaginate))

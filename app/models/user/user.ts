@@ -1,4 +1,5 @@
-import { Schema, model, Document } from 'mongoose'
+import mongoosePaginate from 'mongoose-paginate-v2'
+import { Schema, model, Document, PaginateModel } from 'mongoose'
 
 const userSchema = new Schema({
     firstName: {
@@ -108,6 +109,8 @@ const userSchema = new Schema({
     }
 }, { timestamps: true })
 
+userSchema.plugin(mongoosePaginate)
+
 export interface SavedUserDocument extends Document {
     image: any
 
@@ -145,4 +148,6 @@ export interface SavedUserDocument extends Document {
     status: number
 }
 
-export const userModel = model<SavedUserDocument>('User', userSchema)
+interface userPaginateModel<T extends Document> extends PaginateModel<T> { }
+
+export const userModel: userPaginateModel<SavedUserDocument> = model<SavedUserDocument>('User', userSchema) as userPaginateModel<SavedUserDocument>

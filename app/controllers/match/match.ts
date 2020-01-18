@@ -31,11 +31,21 @@ class MatchController {
             /* Getting the Id's of Matched user and not including it on the list */
             const findObject = {
                 $or: [
-                    { challengerId: req.userData._id },
-                    { challengedId: req.userData._id }
-                ],
+                    {
+                        $or: [
+                            { challengerId: req.userData._id },
+                            { challengedId: req.userData._id }
+                        ],
 
-                hasMatched: true
+                        hasMatched: true
+                    },
+
+                    {
+                        challengerId: req.userData._id,
+
+                        hasMatched: false
+                    }
+                ]
             }
 
             const matchSelectedField = 'challengerId challengedId'
@@ -81,12 +91,20 @@ class MatchController {
                     ...userGenderPreference
                 ],
 
-                _id: { $nin: userIdNotIncluded }
+                _id: { $nin: userIdNotIncluded },
+
+                status: 1
+            }
+
+            const options = {
+                select: selectedField,
+                page: req.query.page,
+                limit: 20
             }
 
             const userList = await userModel
-                                    .find(userPreference)
-                                    .select(selectedField)
+                                    .paginate(userPreference, options)
+
 
             if (!userList) {
                 return res.status(404).send({
