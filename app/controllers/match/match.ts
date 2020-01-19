@@ -250,39 +250,20 @@ class MatchController {
     }
 
     public async test(req: any, res: Response, next: NextFunction) {
-        const findObject = {
-            $or: [
-                { challengerId: req.userData._id },
-                { challengedId: req.userData._id }
-            ],
 
-            hasMatched: true
-        }
+        const user = await userModel.updateMany({},
+            {
+                '$set': {
+                    'fight.remaining': 30,
+                    'fight.resetDate': null,
+                    'brawl.remaining': 1,
+                    'brawl.resetDate': null,
+                } 
+            },
+            { multi: true }
+        )
 
-        const selectedField = 'challengerId challengedId'
-
-        const matchList = await matchModel
-                                    .find(findObject)
-                                    .select(selectedField)
-        
-        let userIdNotIncluded = [ req.userData._id ]
-
-        if (matchList.length) {
-            userIdNotIncluded = [
-                ...userIdNotIncluded,
-                ...matchList.reduce((result: Array<Types.ObjectId>, item) => {
-                    if (item.challengerId !== req.userData._id) {
-                        result.push(item.challengerId)
-                    } else if (item.challengedId !== req.userData._id) {
-                        result.push(item.challengedId)
-                    }
-
-                    return result
-                }, [])
-            ]
-        }
-
-        return res.status(200).send(userIdNotIncluded)
+        return res.status(200).send(user)
     }
 }
 

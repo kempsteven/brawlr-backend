@@ -103,6 +103,26 @@ const userSchema = new Schema({
         }
     },
 
+    fight: {
+        type: Object,
+        default: () => {
+            return {
+                remaining: 30,
+                resetDate: null
+            }
+        }
+    },
+
+    brawl: {
+        type: Object,
+        default: () => {
+            return {
+                remaining: 1,
+                resetDate: null
+            }
+        }
+    },
+
     status: {
         type: Number,
         default: 0
@@ -143,7 +163,11 @@ export interface SavedUserDocument extends Document {
 
     genderPreference: Array<number>
 
-    ageRange: Array<number>
+    ageRange: Array<number>,
+
+    fight: object,
+    
+    brawl: object,
 
     status: number
 }
