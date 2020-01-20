@@ -152,13 +152,13 @@ class UpdateUserImageValidation {
         }
 
         if (!isAllPositionAvailable) {
-            return res.status(400).send({
+            return res.status(422).send({
                 message: 'Image position is not available, please remove the existing image first'
             })
         }
 
         if (!req.body.position.every((pos: string) => parseInt(pos) <= 6)) {
-            return res.status(400).send({
+            return res.status(422).send({
                 message: 'Image position is not valid'
             })
         }                   
@@ -198,7 +198,7 @@ class RemoveUserImageValidation {
                                                     .select('profilePictures')
 
             if (!profilePictures || !profilePictures.length) {
-                return res.status(400).send({
+                return res.status(422).send({
                     message: 'Something went wrong'
                 })
             }
@@ -210,13 +210,13 @@ class RemoveUserImageValidation {
                                         })
 
                 if (!imageObject) {
-                    return res.status(400).send({
+                    return res.status(422).send({
                         message: 'Something went wrong'
                     })
                 }
 
                 if (imageObject.image === null) {
-                    return res.status(400).send({
+                    return res.status(422).send({
                         message: 'Image already deleted.'
                     })
                 }

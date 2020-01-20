@@ -1,10 +1,8 @@
-import { matchModel, MatchDocument } from '../../models/match/match'
-import { userModel, SavedUserDocument } from '../../models/user/user'
+import { matchModel } from '../../models/match/match'
+import { userModel } from '../../models/user/user'
 import { Request, Response, NextFunction } from 'express'
-
 import { io } from '../../server'
-
-import { Types } from 'mongoose'
+import nodeSchedule, { scheduleJob } from 'node-schedule'
 
 class MatchController {
     /* Get User List Methods */
@@ -174,6 +172,69 @@ class MatchController {
         }
     }
 
+    public async updateUsersFightBrawlCount (req: any, res: Response, next: NextFunction) {
+        const challengeType = parseInt(req.body.challengeType)
+        const userProperty = challengeType ? 'brawl' : 'fight' 
+
+        try {
+            const user = await userModel
+                                .findOneAndUpdate(
+                                    { _id: req.userData._id },
+                                    { $inc: { [`${userProperty}.remaining`]: -1 } },
+                                    { 'new': true }
+                                ).select('fight brawl')
+
+            res.locals.user = user
+
+            next()
+        } catch (error) {
+            return res.status(400).send(error)
+        }
+    }
+
+    public async scheduleResetForUsersFightBrawl (req: any, res: Response, next: NextFunction) {
+        const { brawl, fight } = res.locals.user
+        const shouldScheduleResetForUsersBrawl = !parseInt(brawl.remaining) && !brawl.resetDate
+        const shouldScheduleResetForUsersFight = !parseInt(fight.remaining) && !fight.resetDate
+        
+        const dateToday = new Date()
+        const dateTodayTime = dateToday.getTime()
+
+        if (shouldScheduleResetForUsersBrawl) {
+            const dateForJob = new Date(dateToday.setTime(dateTodayTime + (24 * 60 * 60 * 1000)))
+
+            await userModel.updateOne({ _id: req.userData._id }, { 'brawl.resetDate': dateForJob })
+
+            nodeSchedule.scheduleJob(dateForJob, async () => {
+                await userModel.updateOne(
+                                    { _id: req.userData._id },
+                                    {
+                                        'brawl.remaining': 1,
+                                        'brawl.resetDate': null
+                                    }
+                                )
+            })
+        }
+
+        if (shouldScheduleResetForUsersFight) {
+            const dateForJob = new Date(dateToday.setTime(dateTodayTime + (12 * 60 * 60 * 1000)))
+
+            await userModel.updateOne({ _id: req.userData._id }, { 'fight.resetDate': dateForJob })
+
+            nodeSchedule.scheduleJob(dateForJob, async () => {
+                await userModel.updateOne(
+                    { _id: req.userData._id },
+                    {
+                        'fight.remaining': 50,
+                        'fight.resetDate': null
+                    }
+                )
+            })
+        }
+
+        next()
+    }
+
     public async setUpSocketResponse(req: any, res: Response, next: NextFunction) {
         if (!res.locals.isMatched) {
             next()
@@ -239,8 +300,6 @@ class MatchController {
                 challengeType: req.body.challengeType
             })
 
-            // io.sockets.emit(`${req.body.challengedId}_new_match`, { message: 'hello nibba' })
-
             await match.save()
 
             return res.status(200).send()
@@ -251,19 +310,51 @@ class MatchController {
 
     public async test(req: any, res: Response, next: NextFunction) {
 
-        const user = await userModel.updateMany({},
-            {
-                '$set': {
-                    'fight.remaining': 30,
-                    'fight.resetDate': null,
-                    'brawl.remaining': 1,
-                    'brawl.resetDate': null,
-                } 
-            },
-            { multi: true }
-        )
+        // const user = await userModel.updateMany({},
+        //     {
+        //         '$set': {
+        //             'fight.remaining': 50,
+        //             'fight.resetDate': null,
+        //             'brawl.remaining': 1,
+        //             'brawl.resetDate': null,
+        //         } 
+        //     },
+        //     { multi: true }
+        // )
 
-        return res.status(200).send(user)
+        // return res.status(200).send(user)
+
+        // const { brawl, fight }: any = await userModel.find({ _id: req.userData._id }).select('brawl fight')
+
+        // if (req.body.challengeType === 1 && brawl.remaining === 0) {
+        //     return res.status(400).send({
+        //         resetDate: brawl.resetDate,
+        //         message: 'No brawls remaining'
+        //     })
+        // }
+
+        // if (req.body.challengeType === 0 && fight.remaining === 0) {
+        //     return res.status(400).send({
+        //         resetDate: brawl.resetDate,
+        //         message: 'No fights remaining'
+        //     })
+        // }
+
+        // const challengeType = req.body.challengeType
+
+        // try {
+        //     // if (challengeType === 0) {
+        //         await userModel.updateOne({ _id: req.userData._id }, { $inc: { 'fight.remaining': -1 } })
+        //     // } else {
+        //         // await userModel.updateOne({ _id: req.userData._id }, { $inc: { 'brawl.remaining': -1 } })
+        //     // }
+
+        //     return res.status(200).send({
+        //         message: 'heyheyhey'
+        //     })
+        // } catch (error) {
+        //     return res.status(400).send(error)
+        // }
     }
 }
 

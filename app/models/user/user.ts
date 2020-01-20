@@ -131,6 +131,11 @@ const userSchema = new Schema({
 
 userSchema.plugin(mongoosePaginate)
 
+interface FightBrawlInterFace {
+    remaining: number,
+    resetDate: Date
+}
+
 export interface SavedUserDocument extends Document {
     image: any
 
@@ -165,9 +170,9 @@ export interface SavedUserDocument extends Document {
 
     ageRange: Array<number>,
 
-    fight: object,
+    fight: FightBrawlInterFace,
     
-    brawl: object,
+    brawl: FightBrawlInterFace,
 
     status: number
 }

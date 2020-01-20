@@ -1,4 +1,6 @@
 import { matchModel } from '../../models/match/match'
+import { userModel } from '../../models/user/user'
+
 import { Request, Response, NextFunction } from 'express'
 import { Types } from 'mongoose'
 import Joi from '@hapi/joi'
@@ -26,15 +28,41 @@ class MatchValidation {
             !Types.ObjectId.isValid(req.userData._id)
             || !Types.ObjectId.isValid(req.body.challengedId)
         ) {
-            return res.status(400).send({ message: 'Invalid form data' });
+            return res.status(422).send({ message: 'Invalid form data' });
         }
 
         try {
             const match = await matchModel.find({ challengerId: req.userData._id, challengedId: req.body.challengedId })
 
             if (match && match.length) {
-                return res.status(400).send({
+                return res.status(422).send({
                     message: 'Match already exist'
+                })
+            }
+
+            next()
+        } catch (error) {
+            return res.status(422).send(error)
+        }
+    }
+
+    public async validateFightBrawlCount(req: any, res: Response, next: NextFunction): Promise<void | Response> {
+        try {
+            const { brawl, fight }: any = await userModel.findOne({ _id: req.userData._id }).select('brawl fight')
+
+            if (!brawl || !fight) res.status(404).send({ message: 'User cannot be found' })
+            
+            if (parseInt(req.body.challengeType) === 1 && !parseInt(brawl.remaining)) {
+                return res.status(422).send({
+                    resetDate: brawl.resetDate,
+                    message: 'No brawls remaining'
+                })
+            }
+
+            if (parseInt(req.body.challengeType) === 0 && !parseInt(fight.remaining)) {
+                return res.status(422).send({
+                    resetDate: fight.resetDate,
+                    message: 'No fights remaining'
                 })
             }
 

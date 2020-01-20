@@ -24,7 +24,10 @@ class MatchRoutes {
             formData.uploadNone(),
             matchValidation.joiValidation,
             matchValidation.isObjectIdsValid,
+            matchValidation.validateFightBrawlCount,
             matchController.isChallengedHasChallengedUser,
+            matchController.updateUsersFightBrawlCount,
+            matchController.scheduleResetForUsersFightBrawl,
             matchController.setUpSocketResponse,
             matchController.challengeUser
         )
