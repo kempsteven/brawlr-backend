@@ -32,6 +32,13 @@ class MatchRoutes {
             matchController.challengeUser
         )
 
+        app.route('/match/un-match').post(
+            tokenAuth.tokenAuth,
+            formData.uploadNone(),
+            matchValidation.isValidMatchObjectId,
+            matchController.unMatchUser,
+        )
+
         app.route('/match/test-socket').post(
             tokenAuth.tokenAuth,
             formData.uploadNone(),

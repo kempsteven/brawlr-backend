@@ -71,6 +71,27 @@ class MatchValidation {
             return res.status(400).send(error)
         }
     }
+
+    public async isValidMatchObjectId (req: any, res: Response, next: NextFunction): Promise<void | Response> {
+        try {
+            if (
+                !Types.ObjectId.isValid(req.userData._id)
+                || !Types.ObjectId.isValid(req.body.matchId)
+            ) {
+                return res.status(422).send({ message: 'Invalid form data' });
+            }
+
+            const match = await matchModel.findOne({ _id: req.body.matchId })
+
+            if (!match) {
+                return res.status(422).send({ message: 'Invalid form data' });
+            }
+
+            next()
+        } catch (error) {
+            return res.status(400).send(error)
+        }
+    }
 }
 
 export const matchValidation: MatchValidation = new MatchValidation()

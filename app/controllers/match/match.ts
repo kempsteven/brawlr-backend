@@ -1,8 +1,12 @@
-import { matchModel } from '../../models/match/match'
-import { userModel } from '../../models/user/user'
+import { matchModel, MatchDocument } from '../../models/match/match'
+import { userModel, SavedUserDocument } from '../../models/user/user'
 import { Request, Response, NextFunction } from 'express'
 import { io } from '../../server'
-import nodeSchedule, { scheduleJob } from 'node-schedule'
+import nodeSchedule from 'node-schedule'
+
+interface userMatchReturn extends SavedUserDocument {
+    matchId: string
+}
 
 class MatchController {
     /* Get User List Methods */
@@ -130,15 +134,67 @@ class MatchController {
 
             const selectedField = '-_v -createdAt -updatedAt'
 
-            const matchList = await matchModel
-                                    .find(findObject)
-                                    .select(selectedField)
+            const options = {
+                select: selectedField,
+                page: req.query.page || 1,
+                limit: 10
+            }
+
+            const matchList: any = await matchModel.paginate(findObject, options)
 
             if (!matchList) {
                 return res.status(404).send()
             }
 
+            const matchIds: Array<string> = []
+
+            const matchedUsersId: Array<string> = matchList.docs
+                                .reduce((result: Array<string>, item: MatchDocument) => {
+                                    if (`${item.challengerId}` !== `${req.userData._id}`) {
+                                        result.push(`${item.challengerId}`)
+                                        matchIds.push(item._id)
+                                    } else {
+                                        result.push(`${item.challengedId}`)
+                                        matchIds.push(item._id)
+                                    }
+
+                                    return result
+                                }, [])
+            
+            const userList = await userModel
+                                    .find({})
+                                    .select('-password -createdAt -updatedAt -__v -brawl -fight -status -email')
+            
+            const matchedUserList = matchedUsersId
+                                        .reduce((result: Array<object | undefined>, item, index) => {
+                                            let user: any = userList.find(user => `${user._id}` === item)
+                                            
+                                            user = {
+                                                ...user.toObject(),
+                                                matchId: matchIds[index]
+                                            }
+
+                                            result.push(user)
+
+                                            return result
+                                        }, [])
+
+            matchList.docs = matchedUserList
+
             return res.status(200).send(matchList)
+        } catch (error) {
+            return res.status(400).send(error)
+        }
+    }
+
+    /* Umatch User Methods */
+    public async unMatchUser (req: any, res: Response, next: NextFunction) {
+        try {
+            await matchModel.deleteOne({ _id: req.body.matchId })
+
+            return res.status(200).send({
+                message: 'Succesfully removed match'
+            })
         } catch (error) {
             return res.status(400).send(error)
         }
