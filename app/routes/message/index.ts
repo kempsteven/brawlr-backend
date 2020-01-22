@@ -13,14 +13,12 @@ class MessageRoutes {
             tokenAuth.tokenAuth,
             formData.uploadNone(),
             messageValidation.joiValidation,
-            // messageController.checkConversationExistence,
+            messageController.checkConversationExistence,
             messageController.sendMessage
         )
 
         app.route('/message/get-conversation-list').get(
             tokenAuth.tokenAuth,
-            // messageValidation.joiValidation,
-            // messageController.checkConversationExistence,
             messageController.getConversationList
         )
     }

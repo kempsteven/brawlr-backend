@@ -4,9 +4,9 @@ import { Types } from 'mongoose'
 import Joi from '@hapi/joi'
 
 class MessageValidation {
-    public joiValidation(req: Request, res: Response, next: NextFunction): void | Response {
+    public joiValidation(req: any, res: Response, next: NextFunction): void | Response {
         const schema = Joi.object({
-            // senderId: Joi.string().required(),
+            conversationId: Joi.string().allow(null, ''),
             receiverId: Joi.string().required(),
             message: Joi.string().required().max(750)
         })
@@ -19,6 +19,12 @@ class MessageValidation {
             })
         }
 
+        if (
+            !Types.ObjectId.isValid(req.userData._id)
+            || !Types.ObjectId.isValid(req.body.receiverId)
+        ) {
+            return res.status(422).send({ message: 'Invalid form data' });
+        }
         
 
         next()

@@ -2,9 +2,10 @@ import mongoosePaginate from 'mongoose-paginate-v2'
 import { Schema, model, Document, Types, PaginateModel } from 'mongoose'
 
 const messageSchema = new Schema({
-    // conversationId: {
-    //     type: Types.ObjectId
-    // },
+    conversationId: {
+        type: Types.ObjectId,
+        required: false
+    },
 
     senderId: {
         type: Types.ObjectId,

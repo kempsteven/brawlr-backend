@@ -7,9 +7,29 @@ const conversationSchema = new Schema({
         required: true
     },
 
+    userOneName: {
+        type: String,
+        required: false
+    },
+
+    userOnePicture: {
+        type: String,
+        required: false
+    },
+
     userTwoId: {
         type: Types.ObjectId,
         required: true
+    },
+
+    userTwoName: {
+        type: String,
+        required: false
+    },
+
+    userTwoPicture: {
+        type: String,
+        required: false
     },
 
     lastMessage: {
@@ -41,4 +61,4 @@ export interface ConversationDocument extends Document {
 
 interface conversationPaginateModel<T extends Document> extends PaginateModel<T> { }
 
-export const conversationModel: conversationPaginateModel<ConversationDocument> = model<ConversationDocument>('Match', conversationSchema) as conversationPaginateModel<ConversationDocument>
+export const conversationModel: conversationPaginateModel<ConversationDocument> = model<ConversationDocument>('Conversation', conversationSchema) as conversationPaginateModel<ConversationDocument>
