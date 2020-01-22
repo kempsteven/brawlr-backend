@@ -4,17 +4,26 @@ import { formData } from '../../middleware/form-data'
 import { tokenAuth } from '../../middleware/token-auth'
 
 import {
-    matchValidation,
+    messageValidation,
 } from './validation'
 
-class MatchRoutes {
+class MessageRoutes {
     public setRoutes(app: any): void {
-        app.route('/match/get-user-list').get(
+        app.route('/message/send-message').post(
             tokenAuth.tokenAuth,
-            matchValidation.joiValidation,
+            formData.uploadNone(),
+            messageValidation.joiValidation,
+            // messageController.checkConversationExistence,
             messageController.sendMessage
+        )
+
+        app.route('/message/get-conversation-list').get(
+            tokenAuth.tokenAuth,
+            // messageValidation.joiValidation,
+            // messageController.checkConversationExistence,
+            messageController.getConversationList
         )
     }
 }
 
-export const matchRoutes: MatchRoutes = new MatchRoutes()
+export const messageRoutes: MessageRoutes = new MessageRoutes()

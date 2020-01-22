@@ -3,15 +3,12 @@ import { Request, Response, NextFunction } from 'express'
 import { Types } from 'mongoose'
 import Joi from '@hapi/joi'
 
-class MatchValidation {
+class MessageValidation {
     public joiValidation(req: Request, res: Response, next: NextFunction): void | Response {
         const schema = Joi.object({
-            conversationId: Joi.string(),
-            senderId: Joi.string().required(),
-            senderName: Joi.string().max(50).required(),
+            // senderId: Joi.string().required(),
             receiverId: Joi.string().required(),
-            message: Joi.string().required().max(750),
-            attachment: Joi.string().max(250)
+            message: Joi.string().required().max(750)
         })
 
         const { error } = schema.validate(req.body)
@@ -28,4 +25,4 @@ class MatchValidation {
     }
 }
 
-export const matchValidation: MatchValidation = new MatchValidation()
+export const messageValidation: MessageValidation = new MessageValidation()

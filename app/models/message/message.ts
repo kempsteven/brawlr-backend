@@ -1,18 +1,13 @@
-import { Schema, model, Document, Types } from 'mongoose'
+import mongoosePaginate from 'mongoose-paginate-v2'
+import { Schema, model, Document, Types, PaginateModel } from 'mongoose'
 
 const messageSchema = new Schema({
-    conversationId: {
-        type: Types.ObjectId
-    },
+    // conversationId: {
+    //     type: Types.ObjectId
+    // },
 
     senderId: {
         type: Types.ObjectId,
-        required: true
-    },
-
-    senderName: {
-        type: String,
-        default: '',
         required: true
     },
 
@@ -33,6 +28,8 @@ const messageSchema = new Schema({
     },
 }, { timestamps: true })
 
+messageSchema.plugin(mongoosePaginate)
+
 export interface MessageDocument extends Document {
     senderId: Types.ObjectId
 
@@ -41,4 +38,6 @@ export interface MessageDocument extends Document {
     lastMessage: Date
 }
 
-export const messageModel = model<MessageDocument>('Match', messageSchema)
+interface messagePaginateModel<T extends Document> extends PaginateModel<T> { }
+
+export const messageModel: messagePaginateModel<MessageDocument> = model<MessageDocument>('Message', messageSchema) as messagePaginateModel<MessageDocument>

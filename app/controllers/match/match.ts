@@ -149,17 +149,17 @@ class MatchController {
             const matchIds: Array<string> = []
 
             const matchedUsersId: Array<string> = matchList.docs
-                                .reduce((result: Array<string>, item: MatchDocument) => {
-                                    if (`${item.challengerId}` !== `${req.userData._id}`) {
-                                        result.push(`${item.challengerId}`)
-                                        matchIds.push(item._id)
-                                    } else {
-                                        result.push(`${item.challengedId}`)
-                                        matchIds.push(item._id)
-                                    }
+                                                    .reduce((result: Array<string>, item: MatchDocument) => {
+                                                        if (`${item.challengerId}` !== `${req.userData._id}`) {
+                                                            result.push(`${item.challengerId}`)
+                                                            matchIds.push(item._id)
+                                                        } else {
+                                                            result.push(`${item.challengedId}`)
+                                                            matchIds.push(item._id)
+                                                        }
 
-                                    return result
-                                }, [])
+                                                        return result
+                                                    }, [])
             
             const userList = await userModel
                                     .find({})
