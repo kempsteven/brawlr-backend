@@ -29,6 +29,33 @@ class MessageValidation {
 
         next()
     }
+
+    async isBothUserMatched(req: any, res: Response, next: NextFunction) {
+        const currentUserId = req.userData._id
+        const otherUser = req.query.userId
+
+        const match = await matchModel.findOne({
+            $or: [
+                {
+                    challengerId: currentUserId,
+                    challengedId: otherUser
+                },
+
+                {
+                    challengerId: otherUser,
+                    challengedId: currentUserId
+                },
+            ]
+        })
+
+        if (!match) {
+            return res.status(400).send({
+                message: 'You are not matched with this user'
+            })
+        }
+
+        next()
+    }
 }
 
 export const messageValidation: MessageValidation = new MessageValidation()

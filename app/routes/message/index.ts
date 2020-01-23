@@ -21,6 +21,12 @@ class MessageRoutes {
             tokenAuth.tokenAuth,
             messageController.getConversationList
         )
+
+        app.route('/message/get-user-info').get(
+            tokenAuth.tokenAuth,
+            messageValidation.isBothUserMatched,
+            messageController.getUserInfo
+        )
     }
 }
 

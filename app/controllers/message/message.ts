@@ -104,7 +104,7 @@ class MessageController {
         }
     }
 
-    public async sendMessage(req: any, res: Response, next: NextFunction) {
+    public async sendMessage (req: any, res: Response, next: NextFunction) {
         try {
             const message = new messageModel({
                 conversationId: res.locals.conversationId,
@@ -122,6 +122,19 @@ class MessageController {
             }
 
             return res.status(204).send()
+        } catch (error) {
+            return res.status(400).send(error)
+        }
+    }
+
+    /* Get User Info */
+    public async getUserInfo (req: any, res: Response, next: NextFunction) {
+        try {
+            const user = await userModel
+                                .findOne({ _id: req.query.userId })
+                                .select('-password -createdAt -updatedAt -__v -brawl -fight -status -email')
+
+            return res.status(200).send(user)
         } catch (error) {
             return res.status(400).send(error)
         }
