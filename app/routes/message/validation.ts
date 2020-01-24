@@ -1,4 +1,5 @@
 import { matchModel } from '../../models/match/match'
+import { conversationModel } from '../../models/conversation/conversation'
 import { Request, Response, NextFunction } from 'express'
 import { Types } from 'mongoose'
 import Joi from '@hapi/joi'
@@ -55,6 +56,33 @@ class MessageValidation {
         }
 
         next()
+    }
+
+    isValidUserId(req: any, res: Response, next: NextFunction) {
+
+        if (!req.query.userId || !Types.ObjectId.isValid(req.query.userId)) {
+            return res.status(422).send({ message: 'Invalid form data' });
+        }
+
+        next()
+    }
+
+    async isValidConversationId (req: any, res: Response, next: NextFunction) {
+        try {
+            const conversation = await conversationModel
+                                        .findOne({
+                                            _id: req.query.conversationId
+                                        })
+
+            if (!conversation) return res.status(404)
+                                            .send({
+                                                message: 'Invalid conversation id'
+                                            })
+
+            next()
+        } catch (error) {
+            return res.status(422).send(error)
+        }
     }
 }
 

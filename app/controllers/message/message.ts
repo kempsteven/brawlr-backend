@@ -59,11 +59,11 @@ class MessageController {
             })
 
             const currentUser = userList?.find(user => `${user._id}` === `${req.userData._id}`)
-            const currentUserName = currentUser?.firstName
+            const currentUserName = `${currentUser?.firstName} ${currentUser?.lastName}`
             const currentUserPicture = currentUser?.profilePictures.find(picture => picture.image !== null)
 
             const otherUser = userList?.find(user => `${user._id}` === `${req.body.receiverId}`)
-            const otherUserName = otherUser?.firstName
+            const otherUserName = `${otherUser?.firstName} ${otherUser?.lastName}`
             const otherUserPicture = otherUser?.profilePictures.find(picture => picture.image !== null)
 
             const conversation = new conversationModel({
@@ -135,6 +135,34 @@ class MessageController {
                                 .select('-password -createdAt -updatedAt -__v -brawl -fight -status -email')
 
             return res.status(200).send(user)
+        } catch (error) {
+            return res.status(400).send(error)
+        }
+    }
+
+    public async getMessageList (req: any, res: Response, next: NextFunction) {
+        try {
+
+            const messageQuery = {
+                conversationId: req.query.conversationId,
+
+                $or: [
+                    { senderId: req.userData._id },
+                    { receiverId: req.userData._id },
+                ]
+            }
+
+            const options = {
+                select: '-__v -createdAt -updatedAt -conversationId',
+                page: req.query.page || 1,
+                limit: 20,
+                sort: { createdAt: -1 }
+            }
+
+            const messageList = await messageModel
+                                            .paginate(messageQuery, options)
+
+            return res.status(200).send(messageList)
         } catch (error) {
             return res.status(400).send(error)
         }

@@ -9,23 +9,30 @@ import {
 
 class MessageRoutes {
     public setRoutes(app: any): void {
+        app.route('/message/get-user-info').get(
+            tokenAuth.tokenAuth,
+            messageValidation.isValidUserId,
+            messageValidation.isBothUserMatched,
+            messageController.getUserInfo
+        )
+        
+        app.route('/message/get-conversation-list').get(
+            tokenAuth.tokenAuth,
+            messageController.getConversationList
+        )
+
+        app.route('/message/get-message-list').get(
+            tokenAuth.tokenAuth,
+            messageValidation.isValidConversationId,
+            messageController.getMessageList
+        )
+
         app.route('/message/send-message').post(
             tokenAuth.tokenAuth,
             formData.uploadNone(),
             messageValidation.joiValidation,
             messageController.checkConversationExistence,
             messageController.sendMessage
-        )
-
-        app.route('/message/get-conversation-list').get(
-            tokenAuth.tokenAuth,
-            messageController.getConversationList
-        )
-
-        app.route('/message/get-user-info').get(
-            tokenAuth.tokenAuth,
-            messageValidation.isBothUserMatched,
-            messageController.getUserInfo
         )
     }
 }
