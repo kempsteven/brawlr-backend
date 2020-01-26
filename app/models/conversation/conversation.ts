@@ -52,6 +52,8 @@ interface LastMessage {
 }
 
 export interface ConversationDocument extends Document {
+    _id: Types.ObjectId
+
     userOneId: Types.ObjectId
 
     userTwoId: Types.ObjectId

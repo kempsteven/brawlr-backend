@@ -1,9 +1,13 @@
-import { conversationModel } from '../../models/conversation/conversation'
+import { conversationModel, ConversationDocument } from '../../models/conversation/conversation'
 import { messageModel } from '../../models/message/message'
 import { userModel } from '../../models/user/user'
 import { Response, NextFunction } from 'express'
 
 class MessageController {
+    constructor () {
+        this.checkConversationExistence = this.checkConversationExistence.bind(this)
+    }
+
     /* Get Message Conversation List */
     public async getConversationList (req: any, res: Response, next: NextFunction) {
         try {
@@ -54,34 +58,34 @@ class MessageController {
         }
 
         if (!conversationResult) {
-            const userList = await userModel.find({
-                _id: { $in: [ req.body.receiverId, req.userData._id ]}
-            })
+            // const userList = await userModel.find({
+            //     _id: { $in: [ req.body.receiverId, req.userData._id ]}
+            // })
 
-            const currentUser = userList?.find(user => `${user._id}` === `${req.userData._id}`)
-            const currentUserName = `${currentUser?.firstName} ${currentUser?.lastName}`
-            const currentUserPicture = currentUser?.profilePictures.find(picture => picture.image !== null)
+            // const currentUser = userList?.find(user => `${user._id}` === `${req.userData._id}`)
+            // const currentUserName = `${currentUser?.firstName} ${currentUser?.lastName}`
+            // const currentUserPicture = currentUser?.profilePictures.find(picture => picture.image !== null)
 
-            const otherUser = userList?.find(user => `${user._id}` === `${req.body.receiverId}`)
-            const otherUserName = `${otherUser?.firstName} ${otherUser?.lastName}`
-            const otherUserPicture = otherUser?.profilePictures.find(picture => picture.image !== null)
+            // const otherUser = userList?.find(user => `${user._id}` === `${req.body.receiverId}`)
+            // const otherUserName = `${otherUser?.firstName} ${otherUser?.lastName}`
+            // const otherUserPicture = otherUser?.profilePictures.find(picture => picture.image !== null)
 
-            const conversation = new conversationModel({
-                userOneId: req.userData._id,
-                userOneName: currentUserName,
-                userOnePicture: currentUserPicture ? currentUserPicture.image.url : '',
+            // const conversation = new conversationModel({
+            //     userOneId: req.userData._id,
+            //     userOneName: currentUserName,
+            //     userOnePicture: currentUserPicture ? currentUserPicture.image.url : '',
 
-                userTwoId: req.body.receiverId,
-                userTwoName: otherUserName,
-                userTwoPicture: otherUserPicture ? otherUserPicture.image.url : '',
+            //     userTwoId: req.body.receiverId,
+            //     userTwoName: otherUserName,
+            //     userTwoPicture: otherUserPicture ? otherUserPicture.image.url : '',
 
-                lastMessage: {
-                    senderName: currentUserName,
-                    message: req.body.message
-                }
-            })
+            //     lastMessage: {
+            //         senderName: currentUserName,
+            //         message: req.body.message
+            //     }
+            // })
 
-            const savedConversation = await conversation.save()
+            const savedConversation = await this.createNewConversation(req)
             
             res.locals.conversationId = savedConversation._id
             res.locals.hasNewlyCreatedConvo = true
@@ -92,16 +96,55 @@ class MessageController {
         next()
 
         if (conversationResult) {
-            const user = await userModel.findById({ _id: req.userData._id })
-
-            await conversationModel.updateOne(
-                { _id: req.body.conversationId },
-                {
-                    'lastMessage.senderName': user?.firstName,
-                    'lastMessage.message': req.body.message
-                }
+            this.updateConversationLastMessage(
+                req.userData._id,
+                req.body.conversationId,
+                req.body.message
             )
         }
+    }
+
+    public async createNewConversation (req: any) {
+        const userList = await userModel.find({
+            _id: { $in: [req.body.receiverId, req.userData._id] }
+        })
+
+        const currentUser = userList?.find(user => `${user._id}` === `${req.userData._id}`)
+        const currentUserName = `${currentUser?.firstName} ${currentUser?.lastName}`
+        const currentUserPicture = currentUser?.profilePictures.find(picture => picture.image !== null)
+
+        const otherUser = userList?.find(user => `${user._id}` === `${req.body.receiverId}`)
+        const otherUserName = `${otherUser?.firstName} ${otherUser?.lastName}`
+        const otherUserPicture = otherUser?.profilePictures.find(picture => picture.image !== null)
+
+        const conversation = new conversationModel({
+            userOneId: req.userData._id,
+            userOneName: currentUserName,
+            userOnePicture: currentUserPicture ? currentUserPicture.image.url : '',
+
+            userTwoId: req.body.receiverId,
+            userTwoName: otherUserName,
+            userTwoPicture: otherUserPicture ? otherUserPicture.image.url : '',
+
+            lastMessage: {
+                senderName: currentUserName,
+                message: req.body.message
+            }
+        })
+
+        return await conversation.save()
+    }
+
+    public async updateConversationLastMessage(currentUserId: string, conversationId: string, message: string) {
+        const user = await userModel.findById({ _id: currentUserId })
+
+        await conversationModel.updateOne(
+            { _id: conversationId },
+            {
+                'lastMessage.senderName': user?.firstName,
+                'lastMessage.message': message
+            }
+        )
     }
 
     public async sendMessage (req: any, res: Response, next: NextFunction) {

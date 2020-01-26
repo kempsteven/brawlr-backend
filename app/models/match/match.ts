@@ -20,6 +20,11 @@ const matchSchema = new Schema({
     hasMatched: {
         type: Boolean,
         default: false
+    },
+
+    hasConversation: {
+        type: Boolean,
+        default: false
     }
 }, { timestamps: true })
 
