@@ -1,5 +1,6 @@
-import { conversationModel, ConversationDocument } from '../../models/conversation/conversation'
+import { conversationModel } from '../../models/conversation/conversation'
 import { messageModel } from '../../models/message/message'
+import { matchModel } from '../../models/match/match'
 import { userModel } from '../../models/user/user'
 import { Response, NextFunction } from 'express'
 
@@ -22,11 +23,14 @@ class MessageController {
             const options = {
                 select: '-__v',
                 page: req.query.page || 1,
-                limit: 20
+                limit: 20,
+                sort: { updatedAt: -1 }
             }
 
             const conversationList = await conversationModel
                                             .paginate(conversationQuery, options)
+
+            conversationList.docs = conversationList.docs
 
             return res.status(200).send(conversationList)
         } catch (error) {
@@ -58,42 +62,20 @@ class MessageController {
         }
 
         if (!conversationResult) {
-            // const userList = await userModel.find({
-            //     _id: { $in: [ req.body.receiverId, req.userData._id ]}
-            // })
-
-            // const currentUser = userList?.find(user => `${user._id}` === `${req.userData._id}`)
-            // const currentUserName = `${currentUser?.firstName} ${currentUser?.lastName}`
-            // const currentUserPicture = currentUser?.profilePictures.find(picture => picture.image !== null)
-
-            // const otherUser = userList?.find(user => `${user._id}` === `${req.body.receiverId}`)
-            // const otherUserName = `${otherUser?.firstName} ${otherUser?.lastName}`
-            // const otherUserPicture = otherUser?.profilePictures.find(picture => picture.image !== null)
-
-            // const conversation = new conversationModel({
-            //     userOneId: req.userData._id,
-            //     userOneName: currentUserName,
-            //     userOnePicture: currentUserPicture ? currentUserPicture.image.url : '',
-
-            //     userTwoId: req.body.receiverId,
-            //     userTwoName: otherUserName,
-            //     userTwoPicture: otherUserPicture ? otherUserPicture.image.url : '',
-
-            //     lastMessage: {
-            //         senderName: currentUserName,
-            //         message: req.body.message
-            //     }
-            // })
-
             const savedConversation = await this.createNewConversation(req)
             
-            res.locals.conversationId = savedConversation._id
+            res.locals.conversationId = savedConversation?._id
             res.locals.hasNewlyCreatedConvo = true
         } else {
             res.locals.conversationId = req.body.conversationId
         }
 
         next()
+
+        /* 
+            Update Conversation and Match,
+            while also processing the next middleware
+        */
 
         if (conversationResult) {
             this.updateConversationLastMessage(
@@ -102,49 +84,82 @@ class MessageController {
                 req.body.message
             )
         }
+
+        if (!conversationResult) {
+            this.updateMatch(req.userData._id, req.body.receiverId)
+        }
     }
 
     public async createNewConversation (req: any) {
-        const userList = await userModel.find({
-            _id: { $in: [req.body.receiverId, req.userData._id] }
-        })
+        try {
+            const userList = await userModel.find({
+                _id: { $in: [req.body.receiverId, req.userData._id] }
+            })
 
-        const currentUser = userList?.find(user => `${user._id}` === `${req.userData._id}`)
-        const currentUserName = `${currentUser?.firstName} ${currentUser?.lastName}`
-        const currentUserPicture = currentUser?.profilePictures.find(picture => picture.image !== null)
+            const currentUser = userList?.find(user => `${user._id}` === `${req.userData._id}`)
+            const currentUserName = `${currentUser?.firstName} ${currentUser?.lastName}`
+            const currentUserPicture = currentUser?.profilePictures.find(picture => picture.image !== null)
 
-        const otherUser = userList?.find(user => `${user._id}` === `${req.body.receiverId}`)
-        const otherUserName = `${otherUser?.firstName} ${otherUser?.lastName}`
-        const otherUserPicture = otherUser?.profilePictures.find(picture => picture.image !== null)
+            const otherUser = userList?.find(user => `${user._id}` === `${req.body.receiverId}`)
+            const otherUserName = `${otherUser?.firstName} ${otherUser?.lastName}`
+            const otherUserPicture = otherUser?.profilePictures.find(picture => picture.image !== null)
 
-        const conversation = new conversationModel({
-            userOneId: req.userData._id,
-            userOneName: currentUserName,
-            userOnePicture: currentUserPicture ? currentUserPicture.image.url : '',
+            const conversation = new conversationModel({
+                userOneId: req.userData._id,
+                userOneName: currentUserName,
+                userOnePicture: currentUserPicture ? currentUserPicture.image.url : '',
 
-            userTwoId: req.body.receiverId,
-            userTwoName: otherUserName,
-            userTwoPicture: otherUserPicture ? otherUserPicture.image.url : '',
+                userTwoId: req.body.receiverId,
+                userTwoName: otherUserName,
+                userTwoPicture: otherUserPicture ? otherUserPicture.image.url : '',
 
-            lastMessage: {
-                senderName: currentUserName,
-                message: req.body.message
-            }
-        })
+                lastMessage: {
+                    senderName: currentUserName,
+                    message: req.body.message
+                }
+            })
 
-        return await conversation.save()
+            return await conversation.save()
+        } catch (error) { console.log(error) }
     }
 
     public async updateConversationLastMessage(currentUserId: string, conversationId: string, message: string) {
-        const user = await userModel.findById({ _id: currentUserId })
+        try {
+            const user = await userModel.findById({ _id: currentUserId })
 
-        await conversationModel.updateOne(
-            { _id: conversationId },
-            {
-                'lastMessage.senderName': user?.firstName,
-                'lastMessage.message': message
-            }
-        )
+            await conversationModel.updateOne(
+                { _id: conversationId },
+                {
+                    'lastMessage.senderName': user?.firstName,
+                    'lastMessage.message': message
+                }
+            )
+        } catch (error) { console.log(error) }
+    }
+
+    public async updateMatch(currentUserId: string, receiverId: string,) {
+        try {
+            await matchModel
+                    .findOneAndUpdate(
+                        {
+                            $or: [
+                                {
+                                    challengerId: currentUserId,
+                                    challengedId: receiverId
+                                },
+
+                                {
+                                    challengerId: receiverId,
+                                    challengedId: currentUserId,
+                                }
+                            ]
+                        },
+
+                        {
+                            hasConversation: true
+                        }
+                    )
+        } catch (error) { console.log(error) }
     }
 
     public async sendMessage (req: any, res: Response, next: NextFunction) {

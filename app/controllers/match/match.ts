@@ -1,4 +1,6 @@
 import { matchModel, MatchDocument } from '../../models/match/match'
+import { messageModel } from '../../models/message/message'
+import { conversationModel } from '../../models/conversation/conversation'
 import { userModel, SavedUserDocument } from '../../models/user/user'
 import { Request, Response, NextFunction } from 'express'
 import { io } from '../../server'
@@ -129,7 +131,10 @@ class MatchController {
                     { challengedId: req.userData._id }
                 ],
                 
-                hasMatched: true
+                hasMatched: true,
+                hasConversation: req.query.removeWithConversation
+                                    ? false
+                                    : { $in: [ true, false ] }
             }
 
             const selectedField = '-_v -createdAt -updatedAt'
@@ -146,16 +151,12 @@ class MatchController {
                 return res.status(404).send()
             }
 
-            const matchIds: Array<string> = []
-
             const matchedUsersId: Array<string> = matchList.docs
                                                     .reduce((result: Array<string>, item: MatchDocument) => {
                                                         if (`${item.challengerId}` !== `${req.userData._id}`) {
                                                             result.push(`${item.challengerId}`)
-                                                            matchIds.push(item._id)
                                                         } else {
                                                             result.push(`${item.challengedId}`)
-                                                            matchIds.push(item._id)
                                                         }
 
                                                         return result
@@ -170,8 +171,7 @@ class MatchController {
                                             let user: any = userList.find(user => `${user._id}` === item)
                                             
                                             user = {
-                                                ...user.toObject(),
-                                                matchId: matchIds[index]
+                                                ...user.toObject()
                                             }
 
                                             result.push(user)
@@ -187,10 +187,66 @@ class MatchController {
         }
     }
 
-    /* Umatch User Methods */
+    /* Unmatch User Methods */
+    public async removeConversationAndMessages(req: any, res: Response, next: NextFunction) {
+        try {
+            const userOneId = req.body.userOneId
+            const userTwoId = req.body.userTwoId
+
+            const convoDeleteQuery = {
+                                $or: [
+                                    {
+                                        userOneId: userOneId,
+                                        userTwoId: userTwoId
+                                    },
+
+                                    {
+                                        userOneId: userTwoId,
+                                        userTwoId: userOneId
+                                    },
+                                ]
+                            }
+            
+            const messageDeleteQuery = {
+                                $or: [
+                                    {
+                                        senderId: userOneId,
+                                        receiverId: userTwoId
+                                    },
+
+                                    {
+                                        receiverId: userTwoId,
+                                        senderId: userOneId
+                                    },
+                                ]
+                            }
+            
+            await Promise.all([conversationModel.deleteMany(convoDeleteQuery), messageModel.deleteMany(messageDeleteQuery)])
+            
+            next()
+        } catch (error) {
+            return res.status(400).send(error)
+        }
+    }
+
     public async unMatchUser (req: any, res: Response, next: NextFunction) {
         try {
-            await matchModel.deleteOne({ _id: req.body.matchId })
+            const userOneId = req.body.userOneId
+            const userTwoId = req.body.userTwoId
+
+            await matchModel.deleteOne({
+                                $or: [
+                                    {
+                                        challengerId: userOneId,
+                                        challengedId: userTwoId
+                                    },
+
+                                    {
+                                        challengedId: userTwoId,
+                                        challengerId: userOneId
+                                    },
+                                ]
+                            })
 
             return res.status(200).send({
                 message: 'Succesfully removed match'
@@ -411,6 +467,13 @@ class MatchController {
         // } catch (error) {
         //     return res.status(400).send(error)
         // }
+        try {
+            await matchModel.updateMany({}, {
+                hasMatched: true
+            })
+        } catch (error) {
+
+        }
     }
 }
 

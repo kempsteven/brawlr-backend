@@ -36,6 +36,7 @@ class MatchRoutes {
             tokenAuth.tokenAuth,
             formData.uploadNone(),
             matchValidation.isValidMatchObjectId,
+            matchController.removeConversationAndMessages,
             matchController.unMatchUser,
         )
 

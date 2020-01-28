@@ -32,7 +32,12 @@ class MatchValidation {
         }
 
         try {
-            const match = await matchModel.find({ challengerId: req.userData._id, challengedId: req.body.challengedId })
+            const match = await matchModel.find({
+                $or: [
+                    { challengerId: req.userData._id, challengedId: req.body.challengedId },
+                    { challengerId: req.body.challengedId, challengedId: req.userData._id }
+                ]
+            })
 
             if (match && match.length) {
                 return res.status(422).send({
@@ -74,14 +79,28 @@ class MatchValidation {
 
     public async isValidMatchObjectId (req: any, res: Response, next: NextFunction): Promise<void | Response> {
         try {
-            if (
-                !Types.ObjectId.isValid(req.userData._id)
-                || !Types.ObjectId.isValid(req.body.matchId)
-            ) {
+            const IdArray = [ req.body.userOneId, req.body.userTwoId ]
+
+            const isIdsNotValid = IdArray.some(id => !Types.ObjectId.isValid(id))
+            
+            if (isIdsNotValid) {
                 return res.status(422).send({ message: 'Invalid form data' });
             }
 
-            const match = await matchModel.findOne({ _id: req.body.matchId })
+            const findQuery = {
+                                $or: [
+                                    {
+                                        challengerId: req.body.userOneId,
+                                        challengedId: req.body.userTwoId
+                                    },
+                                    {
+                                        challengerId: req.body.userTwoId,
+                                        challengedId: req.body.userOneId
+                                    },
+                                ]
+                            }
+
+            const match = await matchModel.findOne(findQuery)
 
             if (!match) {
                 return res.status(422).send({ message: 'Invalid form data' });
