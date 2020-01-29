@@ -82,15 +82,3 @@ class App {
 }
 
 export default new App().app;
-
-// export const socketSetUp = (app: Server): void => {
-//     const io = socketIo(app)
-
-//     io.on('connection', (socket) => {
-//         console.log(`User Connected - ${socket.id}`)
-
-//         socket.on('new_message', (data) => {
-//             io.sockets.emit('new_message', { data })
-//         })
-//     })
-// }
