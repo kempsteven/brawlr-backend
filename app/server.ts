@@ -8,7 +8,7 @@ const server = app.listen(port, () => {
 })
 
 /* Socket IO Set Up */
-export const io = socketIo(server)
+export const io = socketIo(server, { origins: 'https://brawlr.netlify.com:*' })
 
 io.on('connection', (socket) => {
     console.log(`User Connected - ${socket.id}`)
