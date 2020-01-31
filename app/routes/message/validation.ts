@@ -32,8 +32,12 @@ class MessageValidation {
     }
 
     async isBothUserMatched(req: any, res: Response, next: NextFunction) {
+        const isGetUserInfo = req._parsedUrl.pathname === '/message/get-user-info'
+
         const currentUserId = req.userData._id
-        const otherUser = req.query.userId
+        const otherUser = isGetUserInfo
+                            ? req.query.userId
+                            : req.body.receiverId
 
         const match = await matchModel.findOne({
             $or: [
@@ -59,7 +63,6 @@ class MessageValidation {
     }
 
     isValidUserId(req: any, res: Response, next: NextFunction) {
-
         if (!req.query.userId || !Types.ObjectId.isValid(req.query.userId)) {
             return res.status(422).send({ message: 'Invalid form data' });
         }

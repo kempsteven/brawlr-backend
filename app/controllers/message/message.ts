@@ -3,10 +3,13 @@ import { messageModel } from '../../models/message/message'
 import { matchModel } from '../../models/match/match'
 import { userModel } from '../../models/user/user'
 import { Response, NextFunction } from 'express'
+import { io } from '../../server'
 
 class MessageController {
     constructor () {
         this.checkConversationExistence = this.checkConversationExistence.bind(this)
+        this.createNewConversation = this.createNewConversation.bind(this)
+        this.updateConversationLastMessage = this.updateConversationLastMessage.bind(this)
     }
 
     /* Get Message Conversation List */
@@ -80,6 +83,7 @@ class MessageController {
         if (conversationResult) {
             this.updateConversationLastMessage(
                 req.userData._id,
+                req.body.receiverId,
                 req.body.conversationId,
                 req.body.message
             )
@@ -119,22 +123,50 @@ class MessageController {
                 }
             })
 
-            return await conversation.save()
+            const savedConversation = await conversation.save()
+
+            this.emitUpdatedConversation(
+                req.userData._id,
+                req.body.receiverId,
+                savedConversation,
+                true
+            )
+
+            return savedConversation
         } catch (error) { console.log(error) }
     }
 
-    public async updateConversationLastMessage(currentUserId: string, conversationId: string, message: string) {
+    public async updateConversationLastMessage(currentUserId: string, receiverId: string, conversationId: string, message: string) {
         try {
             const user = await userModel.findById({ _id: currentUserId })
 
-            await conversationModel.updateOne(
+            const updatedConversation = await conversationModel.findByIdAndUpdate(
                 { _id: conversationId },
+
                 {
                     'lastMessage.senderName': user?.firstName,
                     'lastMessage.message': message
-                }
+                },
+
+                { new: true }
             )
+            
+            this.emitUpdatedConversation(
+                currentUserId,
+                receiverId,
+                updatedConversation,
+                false
+            )
+
         } catch (error) { console.log(error) }
+    }
+
+    public async emitUpdatedConversation (currentUserId: string, recevierId: string, updatedConversation: object | null, isNewConversation: boolean) {
+        const socketResponse = { updatedConversation, isNewConversation }
+
+        io.sockets.emit(`${currentUserId}_update_conversation`, socketResponse)
+
+        io.sockets.emit(`${recevierId}_update_conversation`, socketResponse)
     }
 
     public async updateMatch(currentUserId: string, receiverId: string,) {

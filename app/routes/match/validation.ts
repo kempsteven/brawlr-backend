@@ -34,9 +34,18 @@ class MatchValidation {
         try {
             const match = await matchModel.find({
                 $or: [
-                    { challengerId: req.userData._id, challengedId: req.body.challengedId },
-                    { challengerId: req.body.challengedId, challengedId: req.userData._id }
-                ]
+                    { 
+                        challengerId: req.userData._id,
+                        challengedId: req.body.challengedId
+                    },
+
+                    {
+                        challengerId: req.body.challengedId,
+                        challengedId: req.userData._id
+                    }
+                ],
+
+                hasMatched: true
             })
 
             if (match && match.length) {
@@ -79,7 +88,7 @@ class MatchValidation {
 
     public async isValidMatchObjectId (req: any, res: Response, next: NextFunction): Promise<void | Response> {
         try {
-            const IdArray = [ req.body.userOneId, req.body.userTwoId ]
+            const IdArray = [ req.userData._id, req.body.userId ]
 
             const isIdsNotValid = IdArray.some(id => !Types.ObjectId.isValid(id))
             
@@ -90,12 +99,12 @@ class MatchValidation {
             const findQuery = {
                                 $or: [
                                     {
-                                        challengerId: req.body.userOneId,
-                                        challengedId: req.body.userTwoId
+                                        challengerId: req.userData._id,
+                                        challengedId: req.body.userId
                                     },
                                     {
-                                        challengerId: req.body.userTwoId,
-                                        challengedId: req.body.userOneId
+                                        challengerId: req.body.userId,
+                                        challengedId: req.userData._id
                                     },
                                 ]
                             }

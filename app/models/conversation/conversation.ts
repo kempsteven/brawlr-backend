@@ -61,6 +61,6 @@ export interface ConversationDocument extends Document {
     lastMessage: LastMessage
 }
 
-interface conversationPaginateModel<T extends Document> extends PaginateModel<T> { }
+interface conversationPaginateModel<T extends Document> extends PaginateModel<T> {}
 
 export const conversationModel: conversationPaginateModel<ConversationDocument> = model<ConversationDocument>('Conversation', conversationSchema) as conversationPaginateModel<ConversationDocument>

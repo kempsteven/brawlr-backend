@@ -31,6 +31,7 @@ class MessageRoutes {
             tokenAuth.tokenAuth,
             formData.uploadNone(),
             messageValidation.joiValidation,
+            messageValidation.isBothUserMatched,
             messageController.checkConversationExistence,
             messageController.sendMessage
         )

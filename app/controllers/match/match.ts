@@ -1,6 +1,6 @@
 import { matchModel, MatchDocument } from '../../models/match/match'
 import { messageModel } from '../../models/message/message'
-import { conversationModel } from '../../models/conversation/conversation'
+import { conversationModel, ConversationDocument } from '../../models/conversation/conversation'
 import { userModel, SavedUserDocument } from '../../models/user/user'
 import { Request, Response, NextFunction } from 'express'
 import { io } from '../../server'
@@ -11,6 +11,10 @@ interface userMatchReturn extends SavedUserDocument {
 }
 
 class MatchController {
+    constructor () {
+        this.unMatchUser = this.unMatchUser.bind(this)
+    }
+
     /* Get User List Methods */
     public async getUserList(req: any, res: Response, next: NextFunction) {
         const selectedField = 'firstName lastName bio fighterType organization profilePictures gender age location'
@@ -142,7 +146,8 @@ class MatchController {
             const options = {
                 select: selectedField,
                 page: req.query.page || 1,
-                limit: 10
+                limit: 10,
+                sort: { updatedAt: -1 }
             }
 
             const matchList: any = await matchModel.paginate(findObject, options)
@@ -190,10 +195,10 @@ class MatchController {
     /* Unmatch User Methods */
     public async removeConversationAndMessages(req: any, res: Response, next: NextFunction) {
         try {
-            const userOneId = req.body.userOneId
-            const userTwoId = req.body.userTwoId
+            const userOneId = req.userData._id
+            const userTwoId = req.body.userId
 
-            const convoDeleteQuery = {
+            const convoQuery = {
                                 $or: [
                                     {
                                         userOneId: userOneId,
@@ -215,14 +220,16 @@ class MatchController {
                                     },
 
                                     {
-                                        receiverId: userTwoId,
-                                        senderId: userOneId
+                                        senderId: userTwoId,
+                                        receiverId: userOneId
                                     },
                                 ]
                             }
             
-            await Promise.all([conversationModel.deleteMany(convoDeleteQuery), messageModel.deleteMany(messageDeleteQuery)])
+            const convoMessagePromise = await Promise.all([conversationModel.findOneAndDelete(convoQuery), messageModel.deleteMany(messageDeleteQuery)])
             
+            res.locals.conversationId = convoMessagePromise[0]?._id
+
             next()
         } catch (error) {
             return res.status(400).send(error)
@@ -231,8 +238,8 @@ class MatchController {
 
     public async unMatchUser (req: any, res: Response, next: NextFunction) {
         try {
-            const userOneId = req.body.userOneId
-            const userTwoId = req.body.userTwoId
+            const userOneId = req.userData._id
+            const userTwoId = req.body.userId
 
             await matchModel.deleteOne({
                                 $or: [
@@ -242,11 +249,17 @@ class MatchController {
                                     },
 
                                     {
-                                        challengedId: userTwoId,
-                                        challengerId: userOneId
+                                        challengerId: userTwoId,
+                                        challengedId: userOneId
                                     },
                                 ]
                             })
+
+            this.emitUnMatchedToUsers(
+                res.locals.conversationId,
+                req.userData._id,
+                userTwoId
+            )
 
             return res.status(200).send({
                 message: 'Succesfully removed match'
@@ -254,6 +267,12 @@ class MatchController {
         } catch (error) {
             return res.status(400).send(error)
         }
+    }
+
+    public async emitUnMatchedToUsers(conversationId: string | null, currentUserId: string, userTwoId: string) {
+        io.sockets.emit(`${currentUserId}_unmatch`, { conversationId, unMatchedUserId: userTwoId })
+
+        io.sockets.emit(`${userTwoId}_unmatch`, { conversationId, unMatchedUserId: currentUserId })
     }
 
     /* Challenge User Methods */
@@ -361,7 +380,7 @@ class MatchController {
                                                 req.body.challengedId
                                             ]
                                         }
-                                    }).select('_id firstName lastName profilePictures')
+                                    }).select('_id firstName lastName profilePictures age fighterType location gender organization bio')
 
         if (!matchedUsers || matchedUsers.length !== 2) return res.status(404).send({ message: 'One/Both of the users cannot be found' })
 
@@ -394,10 +413,12 @@ class MatchController {
             matchedUserPicture: currentUserPicture,
         }
 
+        console.log(`req.userData._id_new_match: ${req.userData._id}_new_match`)
+        console.log(`req.body.challengedId_new_match: ${req.body.challengedId}_new_match`)
 
-        io.sockets.emit(`${req.userData._id}_new_match`, socketResponse)
+        io.sockets.emit(`${req.userData._id}_new_match`, { socketResponse: socketResponse, matchedUser: matchedUser })
 
-        io.sockets.emit(`${req.body.challengedId}_new_match`, socketChallengedResponse)
+        io.sockets.emit(`${req.body.challengedId}_new_match`, { socketResponse: socketChallengedResponse, matchedUser: currentUser })
 
         return res.status(200).send({
             message: 'Matched.'
