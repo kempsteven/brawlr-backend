@@ -9,7 +9,7 @@ const server = app.listen(port, () => {
 })
 
 /* Socket IO Set Up */
-export const io = socketIo(server, { origins: ['https://brawlr.netlify.com:*', 'http://localhost:8080'] })
+export const io = socketIo(server, { origins: ['https://brawlr.netlify.com', 'http://localhost:8080'] })
 // export const io = socketIo(server)
 
 io.use((socket, next) => {
