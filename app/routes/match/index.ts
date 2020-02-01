@@ -43,7 +43,7 @@ class MatchRoutes {
         app.route('/match/test-socket').post(
             tokenAuth.tokenAuth,
             formData.uploadNone(),
-            matchController.test,
+            // matchController.test,
         )
     }
 }

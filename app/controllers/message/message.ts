@@ -15,12 +15,22 @@ class MessageController {
     /* Get Message Conversation List */
     public async getConversationList (req: any, res: Response, next: NextFunction) {
         try {
+            const keyword = req.query.keyword || ''
+
             const conversationQuery = {
                 $or: [
-                    { userOneId: req.userData._id },
+                    {
+                        userOneId: req.userData._id,
 
-                    { userTwoId: req.userData._id },
-                ]
+                        userTwoName: { $regex: keyword, $options: "i" }
+                    },
+
+                    {
+                        userTwoId: req.userData._id,
+
+                        userOneName: { $regex: keyword, $options: "i" }
+                    },
+                ],
             }
 
             const options = {
