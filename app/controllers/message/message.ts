@@ -216,7 +216,8 @@ class MessageController {
 
             await message.save()
             
-            await subscriptionController.sendNotification(
+            subscriptionController.sendNotification(
+                req.userData._id,
                 req.body.receiverId,
                 'Brawlr | New Message',
                 req.body.message,
