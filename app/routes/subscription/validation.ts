@@ -38,8 +38,10 @@ class SubscriptionValidation {
             return
         }
 
-        // const isSubscriptionSame = reqSubsciption === subscription.subscription
-
+        
+        const isSubscriptionSame = reqSubsciption === subscription.subscription
+        
+        console.log(isSubscriptionSame)
         // if (isSubscriptionSame) {
             return res.status(200).send({ message: 'Subscription already exists.' });
         // }
