@@ -30,18 +30,9 @@ class SubscriptionValidation {
             return res.status(422).send({ message: 'Invalid form data' });
         }
 
-        const subscription = await subscriptionModel.findOne({ userId: userId })
+        const subscription = await subscriptionModel.findOne({ subscription: reqSubsciption })
 
-        if (!subscription) {
-            next()
-
-            return
-        }
-
-        
-        const isSubscriptionSame = reqSubsciption === subscription.subscription
-
-        if (isSubscriptionSame) {
+        if (subscription) {
             return res.status(200).send({ message: 'Subscription already exists.' });
         }
         
