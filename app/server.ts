@@ -1,6 +1,5 @@
 import app from './app'
 import socketIo from 'socket.io'
-import webPush from 'web-push'
 import jwt, { Secret } from 'jsonwebtoken'
 
 const port = process.env.PORT || 3000
