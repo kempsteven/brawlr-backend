@@ -51,9 +51,10 @@ class SubscriptionValidation {
                 a new user logged in and, the past subscription should be removed,
                 so that the new user will not get the old users push notif
             */
-            await subscriptionModel.deleteOne({ subscription: reqSubsciption })
+            // await subscriptionModel.deleteOne({ subscription: reqSubsciption })
+            await subscriptionModel.findOneAndUpdate({ subscription: reqSubsciption }, { userId: userId })
 
-            next()
+            return res.status(200).send({ message: 'Updated subscription.' })
         } catch (error) {
             return res.status(400).send({ message: 'Subscription deletion failed' })
         }
