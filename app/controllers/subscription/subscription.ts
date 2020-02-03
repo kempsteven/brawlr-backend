@@ -34,7 +34,7 @@ class SubscriptionController {
     public async sendNotification (currentUserId: string, userId: string, title: string, message: string, url: string) {
         try {
             const currentUser = await userModel.findById({ _id: currentUserId })
-            
+
             const currentUserFirstName = currentUser?.firstName
 
             const payload = JSON.stringify({
@@ -43,19 +43,21 @@ class SubscriptionController {
                                 url: url
                             })
 
-            const subscription = await subscriptionModel.findOne({ userId: userId })
+            const subscription = await subscriptionModel.find({ userId: userId })
 
             if (!subscription) return
 
             // console.log(subscription)
 
-            const x = await webPush.sendNotification(JSON.parse(subscription.subscription), payload)
-            console.log(x)
-            // subscription.forEach(async (sub) => {
-            //     await webPush.sendNotification(JSON.parse(sub.subscription), payload)
-            // })
+            // const x = await webPush.sendNotification(JSON.parse(subscription.subscription), payload)
 
-            console.log('No Error')
+            // console.log(x)
+            
+            subscription.forEach(async (sub) => {
+                await webPush.sendNotification(JSON.parse(sub.subscription), payload)
+            })
+
+            // console.log('No Error')
             // const x = await webPush.sendNotification(JSON.parse(subscription.subscription), payload)
             // console.log(x)
 
