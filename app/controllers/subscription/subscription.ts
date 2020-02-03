@@ -39,15 +39,10 @@ class SubscriptionController {
             if (!subscription) return
 
             subscription.forEach(async (sub) => {
-                try {
-                    const x = await webPush.sendNotification(JSON.parse(sub.subscription), payload)
-                    console.log(x)
-                    console.log('No Error')
-                } catch (error) {
-                    console.log(error)
-                }
-                
+                await webPush.sendNotification(JSON.parse(sub.subscription), payload)
             })
+
+            console.log('No Error')
             // const x = await webPush.sendNotification(JSON.parse(subscription.subscription), payload)
             // console.log(x)
 
