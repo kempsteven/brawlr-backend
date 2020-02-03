@@ -216,7 +216,12 @@ class MessageController {
 
             await message.save()
             
-            await subscriptionController.sendNotification(req.body.receiverId, 'Test', 'Test', 'Test')
+            await subscriptionController.sendNotification(
+                req.body.receiverId,
+                'Brawlr | New Message',
+                req.body.message,
+                `https://brawlr.netlify.com/messages/`
+            )
 
             if (res.locals.hasNewlyCreatedConvo) {
                 return res.status(200).send({
