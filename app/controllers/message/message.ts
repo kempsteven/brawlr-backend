@@ -4,6 +4,7 @@ import { matchModel } from '../../models/match/match'
 import { userModel } from '../../models/user/user'
 import { Response, NextFunction } from 'express'
 import { io } from '../../server'
+import { subscriptionController } from '../../controllers/subscription/subscription'
 
 class MessageController {
     constructor () {
@@ -214,6 +215,8 @@ class MessageController {
             })
 
             await message.save()
+            
+            await subscriptionController.sendNotification(req.body.receiverId, 'Test', 'Test', 'Test')
 
             if (res.locals.hasNewlyCreatedConvo) {
                 return res.status(200).send({
