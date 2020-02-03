@@ -34,15 +34,17 @@ class SubscriptionController {
         const payload = JSON.stringify({ title: title, message: message, url: url })
 
         try {
-            const subscription = await subscriptionModel.find({ userId: userId })
+            const subscription = await subscriptionModel.findOne({ userId: userId })
 
             if (!subscription) return
 
-            console.log(subscription)
+            // console.log(subscription)
 
-            subscription.forEach(async (sub) => {
-                await webPush.sendNotification(JSON.parse(sub.subscription), payload)
-            })
+            const x = await webPush.sendNotification(JSON.parse(subscription.subscription), payload)
+            console.log(x)
+            // subscription.forEach(async (sub) => {
+            //     await webPush.sendNotification(JSON.parse(sub.subscription), payload)
+            // })
 
             console.log('No Error')
             // const x = await webPush.sendNotification(JSON.parse(subscription.subscription), payload)
