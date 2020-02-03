@@ -38,6 +38,8 @@ class SubscriptionController {
 
             if (!subscription) return
 
+            console.log(subscription)
+
             subscription.forEach(async (sub) => {
                 await webPush.sendNotification(JSON.parse(sub.subscription), payload)
             })
