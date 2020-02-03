@@ -32,11 +32,26 @@ class SubscriptionValidation {
 
         const subscription = await subscriptionModel.findOne({ subscription: reqSubsciption })
 
-        if (subscription) {
-            return res.status(200).send({ message: 'Subscription already exists.' });
+        if (!subscription) {
+            next()
+            
+            return
+        }
+
+        if (subscription.userId === userId) {
+            return res.status(200).send({ message: 'Subscription already exists.' })
         }
         
-        next()
+        try {
+            /* 
+                If subscription.userId is not equal to userId, which means;
+                a new user logged in and, the past subscription should be removed,
+                so that the new user will not get the old users push notif
+            */
+            await subscriptionModel.deleteOne({ subscription: reqSubsciption })
+        } catch (error) {
+            return res.status(400).send({ message: 'Subscription deletion failed' })
+        }
     }
 }
 
