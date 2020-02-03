@@ -41,7 +41,7 @@ class SubscriptionValidation {
         if (subscription.userId === userId) {
             return res.status(200).send({ message: 'Subscription already exists.' })
         }
-        
+
         try {
             /* 
                 If subscription.userId is not equal to userId, which means;
@@ -49,6 +49,8 @@ class SubscriptionValidation {
                 so that the new user will not get the old users push notif
             */
             await subscriptionModel.deleteOne({ subscription: reqSubsciption })
+
+            next()
         } catch (error) {
             return res.status(400).send({ message: 'Subscription deletion failed' })
         }
