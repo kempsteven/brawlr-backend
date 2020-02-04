@@ -46,20 +46,14 @@ class SubscriptionController {
             const subscription = await subscriptionModel.find({ userId: userId })
 
             if (!subscription) return
-
-            // console.log(subscription)
-
-            // const x = await webPush.sendNotification(JSON.parse(subscription.subscription), payload)
-
-            // console.log(x)
             
             subscription.forEach(async (sub) => {
-                await webPush.sendNotification(JSON.parse(sub.subscription), payload)
+                try {
+                    await webPush.sendNotification(JSON.parse(sub.subscription), payload)
+                } catch (error) {
+                    console.log(error)
+                }
             })
-
-            // console.log('No Error')
-            // const x = await webPush.sendNotification(JSON.parse(subscription.subscription), payload)
-            // console.log(x)
 
             return true
         } catch (error) {

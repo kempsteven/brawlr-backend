@@ -39,25 +39,6 @@ class App {
 
         //support application/x-www-form-urlencoded post data
         this.app.use(bodyParser.urlencoded({ extended: false }))
-
-        // //if received route is not found
-        // this.app.use((req, res, next) => {
-        //     const error = new Error('Route Not Found')
-
-        //     error.status = 404
-
-        //     next(error)
-        // })
-
-        // //handling error
-        // this.app.use((error : Error, req, res, next) => {
-        //     res.status(error.status || 500)
-        //     res.json({
-        //         error: {
-        //             message: error.message
-        //         }
-        //     })
-        // })
     }
 
     private mongoSetup () : void {

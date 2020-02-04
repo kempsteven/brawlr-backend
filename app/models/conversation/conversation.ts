@@ -36,6 +36,7 @@ const conversationSchema = new Schema({
         type: Object,
         default: () => {
             return {
+                senderId: { type: Types.ObjectId },
                 senderName: '',
                 message: ''
             }
@@ -47,6 +48,7 @@ const conversationSchema = new Schema({
 conversationSchema.plugin(mongoosePaginate)
 
 interface LastMessage {
+    senderId: Types.ObjectId,
     senderName: string,
     message: string
 }
@@ -56,7 +58,11 @@ export interface ConversationDocument extends Document {
 
     userOneId: Types.ObjectId
 
+    userOneName: string,
+
     userTwoId: Types.ObjectId
+
+    userTwoName: string,
 
     lastMessage: LastMessage
 }

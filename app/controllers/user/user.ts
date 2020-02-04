@@ -1,11 +1,17 @@
 import { userModel, SavedUserDocument } from '../../models/user/user'
-import { Request, Response, NextFunction } from 'express'
+import { conversationModel } from '../../models/conversation/conversation'
+import { Response, NextFunction } from 'express'
 
+import { messageController } from '../../controllers/message/message'
 interface ProfilePictureProperty {
     // profilePictures: Array<object>
 }
 
 class UserController {
+    constructor () {
+        this.updateUser = this.updateUser.bind(this)
+    }
+
     /* Get User Methods */
     public async getUser(req: any, res: Response): Promise<void | Response> {
         try {
@@ -41,14 +47,63 @@ class UserController {
         })
 
         try {
-            await userModel.updateOne({ _id: req.userData._id }, { $set: propertyToUpdate })
+            const beforeUpdatedUser = await userModel.findById({ _id: req.userData._id })
 
-            const user: any = await userModel.findById(req.userData._id).select('-__v -password -status')
+            const user: any = await userModel.findByIdAndUpdate(
+                                                req.userData._id,
+                                                { $set: propertyToUpdate },
+                                                { new: true }
+                                            ).select('-__v -password -status')
 
-            return res.status(200).send(user)
+            res.status(200).send(user)
+
+            this.updateConversationWithYourName(req.userData._id, user, beforeUpdatedUser)
         } catch (err) {
             return res.status(400).send(err)
         }
+    }
+
+    public async updateConversationWithYourName(currentUserId: string, updatedProperties: SavedUserDocument, beforeUpdateduser: SavedUserDocument | null) {
+        const beforeUpdateFullName = `${beforeUpdateduser?.firstName} ${beforeUpdateduser?.lastName}`
+        const updatedFullName = `${updatedProperties?.firstName} ${updatedProperties?.lastName}`
+        const isNameUpdated = beforeUpdateFullName !== updatedFullName
+
+        if (!isNameUpdated) return
+
+        const currentUserConversationList = await conversationModel
+                                                    .find({
+                                                        $or: [
+                                                            { userOneId: currentUserId },
+
+                                                            { userTwoId: currentUserId },
+                                                        ],
+                                                    })
+
+        currentUserConversationList?.forEach(async conversation => {
+            if (`${conversation.userOneId}` === `${currentUserId}`) {
+                conversation.userOneName = updatedFullName
+            } else if (`${conversation.userTwoId}` === `${currentUserId}`) {
+                conversation.userTwoName = updatedFullName
+            }
+            
+            if (`${conversation.lastMessage.senderId}` === `${currentUserId}`) {
+                conversation.lastMessage.senderName = updatedProperties?.firstName
+            }
+
+            const updatedConversation = await conversationModel
+                                                .findByIdAndUpdate(
+                                                    { _id: conversation._id },
+                                                    conversation, 
+                                                    { new: true }
+                                                )
+
+            messageController.emitUpdatedConversation(
+                `${updatedConversation?.userOneId}`,
+                `${updatedConversation?.userTwoId}`,
+                updatedConversation,
+                false
+            )
+        })
     }
 
     /* Update User Image Methods */

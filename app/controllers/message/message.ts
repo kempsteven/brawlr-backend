@@ -5,6 +5,7 @@ import { userModel } from '../../models/user/user'
 import { Response, NextFunction } from 'express'
 import { io } from '../../server'
 import { subscriptionController } from '../../controllers/subscription/subscription'
+import { Types } from 'mongoose'
 
 class MessageController {
     constructor () {
@@ -129,6 +130,7 @@ class MessageController {
                 userTwoPicture: otherUserPicture ? otherUserPicture.image.url : '',
 
                 lastMessage: {
+                    senderId: Types.ObjectId(req.userData._id),
                     senderName: currentUserName,
                     message: req.body.message
                 }
@@ -155,6 +157,7 @@ class MessageController {
                 { _id: conversationId },
 
                 {
+                    'lastMessage.senderId': Types.ObjectId(currentUserId),
                     'lastMessage.senderName': user?.firstName,
                     'lastMessage.message': message
                 },
@@ -172,7 +175,7 @@ class MessageController {
         } catch (error) { console.log(error) }
     }
 
-    public async emitUpdatedConversation (currentUserId: string, recevierId: string, updatedConversation: object | null, isNewConversation: boolean) {
+    public async emitUpdatedConversation (currentUserId: string | null, recevierId: string | null, updatedConversation: object | null, isNewConversation: boolean) {
         const socketResponse = { updatedConversation, isNewConversation }
 
         io.sockets.emit(`${currentUserId}_update_conversation`, socketResponse)

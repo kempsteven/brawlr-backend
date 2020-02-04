@@ -467,59 +467,13 @@ class MatchController {
     }
 
     public async test(req: any, res: Response, next: NextFunction) {
-
-        // const user = await userModel.updateMany({},
-        //     {
-        //         '$set': {
-        //             'fight.remaining': 50,
-        //             'fight.resetDate': null,
-        //             'brawl.remaining': 1,
-        //             'brawl.resetDate': null,
-        //         } 
-        //     },
-        //     { multi: true }
-        // )
-
-        // return res.status(200).send(user)
-
-        // const { brawl, fight }: any = await userModel.find({ _id: req.userData._id }).select('brawl fight')
-
-        // if (req.body.challengeType === 1 && brawl.remaining === 0) {
-        //     return res.status(400).send({
-        //         resetDate: brawl.resetDate,
-        //         message: 'No brawls remaining'
-        //     })
-        // }
-
-        // if (req.body.challengeType === 0 && fight.remaining === 0) {
-        //     return res.status(400).send({
-        //         resetDate: brawl.resetDate,
-        //         message: 'No fights remaining'
-        //     })
-        // }
-
-        // const challengeType = req.body.challengeType
-
         // try {
-        //     // if (challengeType === 0) {
-        //         await userModel.updateOne({ _id: req.userData._id }, { $inc: { 'fight.remaining': -1 } })
-        //     // } else {
-        //         // await userModel.updateOne({ _id: req.userData._id }, { $inc: { 'brawl.remaining': -1 } })
-        //     // }
-
-        //     return res.status(200).send({
-        //         message: 'heyheyhey'
+        //     await matchModel.updateMany({}, {
+        //         hasConversation: false
         //     })
         // } catch (error) {
-        //     return res.status(400).send(error)
-        // }
-        try {
-            await matchModel.updateMany({}, {
-                hasMatched: true
-            })
-        } catch (error) {
 
-        }
+        // }
     }
 }
 

@@ -38,9 +38,6 @@ class SubscriptionValidation {
             return
         }
 
-        console.log(`${subscription.userId}`)
-        console.log(`${userId}`)
-
         if (`${subscription.userId}` === `${userId}`) {
             return res.status(200).send({ message: 'Subscription already exists.' })
         }
