@@ -5,6 +5,7 @@ import { userModel, SavedUserDocument } from '../../models/user/user'
 import { Request, Response, NextFunction } from 'express'
 import { io } from '../../server'
 import nodeSchedule from 'node-schedule'
+import { subscriptionController } from '../../controllers/subscription/subscription'
 
 interface userMatchReturn extends SavedUserDocument {
     matchId: string
@@ -418,7 +419,23 @@ class MatchController {
 
         io.sockets.emit(`${req.userData._id}_new_match`, { socketResponse: socketResponse, matchedUser: matchedUser })
 
+        subscriptionController.sendNotification(
+            req.body.challengedId,
+            req.userData._id,
+            'Brawlr',
+            'and you has matched!',
+            `https://brawlr.netlify.com/fighters`
+        )
+
         io.sockets.emit(`${req.body.challengedId}_new_match`, { socketResponse: socketChallengedResponse, matchedUser: currentUser })
+
+        subscriptionController.sendNotification(
+            req.userData._id,
+            req.body.challengedId,
+            'Brawlr',
+            'and you has matched!',
+            `https://brawlr.netlify.com/fighters`
+        )
 
         return res.status(200).send({
             message: 'Matched.'
@@ -434,6 +451,14 @@ class MatchController {
             })
 
             await match.save()
+
+            subscriptionController.sendNotification(
+                req.userData._id,
+                req.body.challengedId,
+                'Brawlr',
+                'Wants to brawl!',
+                `https://brawlr.netlify.com/fighters`
+            )
 
             return res.status(200).send()
         } catch (error) {
