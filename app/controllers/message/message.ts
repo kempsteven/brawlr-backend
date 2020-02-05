@@ -131,7 +131,7 @@ class MessageController {
 
                 lastMessage: {
                     senderId: Types.ObjectId(req.userData._id),
-                    senderName: currentUserName,
+                    senderName: currentUser?.firstName,
                     message: req.body.message
                 }
             })

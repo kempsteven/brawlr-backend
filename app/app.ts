@@ -6,7 +6,6 @@ import { Routes } from './routes'
 class App {
     public app : express.Application
     public routePrv : Routes = new Routes()
-    public _io: any
 
     constructor () {
         this.app = express()

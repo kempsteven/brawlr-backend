@@ -9,8 +9,8 @@ const server = app.listen(port, () => {
 })
 
 /* Socket IO Set Up */
-export const io = socketIo(server, { origins: 'https://brawlr.netlify.com:*' })
-// export const io = socketIo(server, { origins: ['https://brawlr.netlify.com:*', 'localhost:8080'] })
+// export const io = socketIo(server, { origins: 'https://brawlr.netlify.com:*' })
+export const io = socketIo(server, { origins: ['https://brawlr.netlify.com:*', 'localhost:8080'] })
 
 io.use((socket, next) => {
     if (socket.handshake.query && socket.handshake.query.token) {

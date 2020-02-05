@@ -3,6 +3,8 @@ import { conversationModel } from '../../models/conversation/conversation'
 import { Response, NextFunction } from 'express'
 
 import { messageController } from '../../controllers/message/message'
+
+import { Types } from 'mongoose'
 interface ProfilePictureProperty {
     // profilePictures: Array<object>
 }
@@ -67,43 +69,94 @@ class UserController {
         const beforeUpdateFullName = `${beforeUpdateduser?.firstName} ${beforeUpdateduser?.lastName}`
         const updatedFullName = `${updatedProperties?.firstName} ${updatedProperties?.lastName}`
         const isNameUpdated = beforeUpdateFullName !== updatedFullName
+        const currentUserObjId = Types.ObjectId(currentUserId)
 
         if (!isNameUpdated) return
 
-        const currentUserConversationList = await conversationModel
-                                                    .find({
-                                                        $or: [
-                                                            { userOneId: currentUserId },
+        try {
+            await conversationModel.update(
+                {
+                    $or: [
+                        { userOneId: currentUserId },
+                        { userTwoId: currentUserId },
+                    ]
+                },
 
-                                                            { userTwoId: currentUserId },
-                                                        ],
-                                                    })
+                [{
+                    $set: {
+                        "lastMessage.senderName": {
+                            $cond: [
+                                { $eq: ["$lastMessage.senderId", currentUserObjId] },
+                                updatedProperties?.firstName,
+                                "$lastMessage.senderName"
+                            ]
+                        },
 
-        currentUserConversationList?.forEach(async conversation => {
-            if (`${conversation.userOneId}` === `${currentUserId}`) {
-                conversation.userOneName = updatedFullName
-            } else if (`${conversation.userTwoId}` === `${currentUserId}`) {
-                conversation.userTwoName = updatedFullName
-            }
-            
-            if (`${conversation.lastMessage.senderId}` === `${currentUserId}`) {
-                conversation.lastMessage.senderName = updatedProperties?.firstName
-            }
+                        "userOneName": { $cond: [{ $eq: ["$userOneId", currentUserObjId] }, updatedFullName, "$userOneName"] },
+                        "userTwoName": { $cond: [{ $eq: ["$userTwoId", currentUserObjId] }, updatedFullName, "$userTwoName"] }
+                    }
+                }],
 
-            const updatedConversation = await conversationModel
-                                                .findByIdAndUpdate(
-                                                    { _id: conversation._id },
-                                                    conversation, 
-                                                    { new: true }
-                                                )
-
-            messageController.emitUpdatedConversation(
-                `${updatedConversation?.userOneId}`,
-                `${updatedConversation?.userTwoId}`,
-                updatedConversation,
-                false
+                { multi: true }
             )
-        })
+            
+            // Get All Updated Conversation
+            const updatedConversationList = await conversationModel
+                                                        .find({
+                                                            $or: [
+                                                                { userOneId: currentUserId },
+                                                                { userTwoId: currentUserId },
+                                                            ]
+                                                        })
+            
+            // Loop through all the list and update all user conversation
+            updatedConversationList?.forEach(conversation => {
+                messageController.emitUpdatedConversation(
+                    `${conversation?.userOneId}`,
+                    `${conversation?.userTwoId}`,
+                    conversation,
+                    false
+                )
+            })
+        } catch (error) {
+            console.log(error)
+        }
+        
+        // Other Solution
+        // const currentUserConversationList = await conversationModel
+        //                                             .find({
+        //                                                 $or: [
+        //                                                     { userOneId: currentUserId },
+
+        //                                                     { userTwoId: currentUserId },
+        //                                                 ],
+        //                                             })
+
+        // currentUserConversationList?.forEach(async conversation => {
+        //     if (`${conversation.userOneId}` === `${currentUserId}`) {
+        //         conversation.userOneName = updatedFullName
+        //     } else if (`${conversation.userTwoId}` === `${currentUserId}`) {
+        //         conversation.userTwoName = updatedFullName
+        //     }
+            
+        //     if (`${conversation.lastMessage.senderId}` === `${currentUserId}`) {
+        //         conversation.lastMessage.senderName = updatedProperties?.firstName
+        //     }
+
+        //     const updatedConversation = await conversationModel
+        //                                         .findByIdAndUpdate(
+        //                                             { _id: conversation._id },
+        //                                             conversation, 
+        //                                             { new: true }
+        //                                         )
+
+        //     messageController.emitUpdatedConversation(
+        //         `${updatedConversation?.userOneId}`,
+        //         `${updatedConversation?.userTwoId}`,
+        //         updatedConversation,
+        //         false
+        //     )
+        // })
     }
 
     /* Update User Image Methods */
