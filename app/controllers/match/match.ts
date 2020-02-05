@@ -1,18 +1,23 @@
 import { matchModel, MatchDocument } from '../../models/match/match'
 import { messageModel } from '../../models/message/message'
-import { conversationModel, ConversationDocument } from '../../models/conversation/conversation'
+import { conversationModel } from '../../models/conversation/conversation'
 import { userModel, SavedUserDocument } from '../../models/user/user'
-import { Request, Response, NextFunction } from 'express'
+import { Response, NextFunction } from 'express'
 import { io } from '../../server'
 import nodeSchedule from 'node-schedule'
 import { subscriptionController } from '../../controllers/subscription/subscription'
+import { Types } from 'mongoose'
 
+interface BrawledUserDocument extends SavedUserDocument {
+    hasBrawledCurrentUser: boolean
+}
 interface userMatchReturn extends SavedUserDocument {
     matchId: string
 }
 
 class MatchController {
     constructor () {
+        this.getUserList = this.getUserList.bind(this)
         this.unMatchUser = this.unMatchUser.bind(this)
     }
 
@@ -22,72 +27,13 @@ class MatchController {
 
         try {
             /* Setting user preferences for user list */
-            const { genderPreference, ageRange }: any = await userModel
-                                                                .findById({ _id: req.userData._id })
-                                                                .select('genderPreference ageRange')
-            
-            /* For Users Gender Preference  */
-            const userGenderPreference = Object.keys(genderPreference)
-                                            .reduce((result: Array<object>, gender: string, index: number) => {
-                                                // if genderPreference[gender] equal to 0, it would be false and viseversa
-                                                const genderValue = !!+genderPreference[gender]
-                                                
-                                                if (genderValue) result.push({ 'gender.id': `${index === 2 ? 'other-option' : index}` })
-
-                                                return result
-                                            }, [])
+            const { userGenderPreference, ageRange } = await this.getUserGenderAndAgePreference(req.userData._id)
 
             /* Getting the Id's of Matched user and not including it on the list */
-            const findObject = {
-                $or: [
-                    {
-                        $or: [
-                            { challengerId: req.userData._id },
-                            { challengedId: req.userData._id }
-                        ],
+            const matchedUserIds = await this.getMatchedUserIds(req.userData._id)
 
-                        hasMatched: true
-                    },
-
-                    {
-                        challengerId: req.userData._id,
-
-                        hasMatched: false
-                    }
-                ]
-            }
-
-            const matchSelectedField = 'challengerId challengedId'
-
-            const matchList = await matchModel
-                                        .find(findObject)
-                                        .select(matchSelectedField)
-
-            const currentUserId = `${req.userData._id}`
-
-            let userIdNotIncluded = [ currentUserId ]
-
-            if (matchList.length) {
-                userIdNotIncluded = [
-                    ...userIdNotIncluded,
-                    ...matchList.reduce((result: Array<string>, item) => {
-                        const challengerId = `${item.challengerId}`
-                        const challengedId = `${item.challengedId}`
-
-                        if (challengerId !== currentUserId) {
-
-                            result.push(challengerId)
-
-                        } else if (challengedId !== currentUserId) {
-
-                            result.push(challengedId)
-                            
-                        }
-
-                        return result
-                    }, [])
-                ]
-            }
+            /* Get Users Who Brawled Current User and Put them 1st in the list*/
+            const { userWhoBrawledCurrentUserList, userIdsWhoBrawledCurrentUser } = await this.getUserWhoBrawledCurrentUserList(req.userData._id) || {}
             
             /* Setting User Preference Object to be passed on .find() */
             const userPreference = {
@@ -100,7 +46,7 @@ class MatchController {
                     ...userGenderPreference
                 ],
 
-                _id: { $nin: userIdNotIncluded },
+                _id: { $nin: [ ...matchedUserIds, ...userIdsWhoBrawledCurrentUser || [] ] },
 
                 status: 1
             }
@@ -114,6 +60,10 @@ class MatchController {
             const userList = await userModel
                                     .paginate(userPreference, options)
 
+            userList.docs = [
+                ...userWhoBrawledCurrentUserList || [],
+                ...userList.docs
+            ]
 
             if (!userList) {
                 return res.status(404).send({
@@ -124,6 +74,113 @@ class MatchController {
             return res.status(200).send(userList)
         } catch (error) {
             return res.status(400).send(error)
+        }
+    }
+
+    private async getUserGenderAndAgePreference (currentUserId: string) {
+        const { genderPreference, ageRange }: any = await userModel
+                                                            .findById({ _id: currentUserId })
+                                                            .select('genderPreference ageRange')
+
+        /* For Users Gender Preference  */
+        const userGenderPreference = Object.keys(genderPreference)
+                                        .reduce((result: Array<object>, gender: string, index: number) => {
+                                            // if genderPreference[gender] equal to 0, it would be false and viseversa
+                                            const genderValue = !!+genderPreference[gender]
+
+                                            if (genderValue) result.push({ 'gender.id': `${index === 2 ? 'other-option' : index}` })
+
+                                            return result
+                                        }, [])
+
+        return { userGenderPreference, ageRange }
+    }
+
+    private async getMatchedUserIds (currentUserId: string) {
+        const findObject = {
+            $or: [
+                {
+                    $or: [
+                        { challengerId: currentUserId },
+                        { challengedId: currentUserId }
+                    ],
+
+                    hasMatched: true
+                },
+
+                {
+                    challengerId: currentUserId,
+
+                    hasMatched: false
+                }
+            ]
+        }
+
+        const matchSelectedField = 'challengerId challengedId'
+
+        const matchList = await matchModel
+                                    .find(findObject)
+                                    .select(matchSelectedField)
+
+        let userIdNotIncluded = [currentUserId]
+
+        if (matchList.length) {
+            userIdNotIncluded = [
+                ...userIdNotIncluded,
+                ...matchList.reduce((result: Array<string>, item) => {
+                    const challengerId = `${item.challengerId}`
+                    const challengedId = `${item.challengedId}`
+
+                    if (challengerId !== currentUserId) {
+                        result.push(challengerId)
+                    } else if (challengedId !== currentUserId) {
+                        result.push(challengedId)
+                    }
+
+                    return result
+                }, [])
+            ]
+        }
+
+        return userIdNotIncluded
+    }
+
+    private async getUserWhoBrawledCurrentUserList (currentUserId: string) {
+        const selectedField = 'firstName lastName bio fighterType organization profilePictures gender age location'
+
+        try {
+            const findObject = {
+                challengedId: currentUserId,
+                challengeType: 1,
+                hasMatched: false
+            }
+
+            const matchSelectedField = 'challengerId challengedId'
+
+            const brawledCurrentUserMatchList = await matchModel
+                                                        .find(findObject)
+                                                        .select(matchSelectedField)
+
+            const userIdsWhoBrawledCurrentUser = brawledCurrentUserMatchList
+                                                    .reduce((result: Array<Types.ObjectId>, item) => {
+                                                        result.push(item.challengerId)
+                                                        return result
+                                                    }, [])
+
+            const userlist = await userModel
+                                    .find({ _id: { $in: userIdsWhoBrawledCurrentUser } })
+                                    .select(selectedField)
+
+            const userWhoBrawledCurrentUserList = JSON.parse(JSON.stringify(userlist))
+                                                    .reduce((result: Array<BrawledUserDocument>, item: BrawledUserDocument) => {
+                                                        item.hasBrawledCurrentUser = true
+                                                        result.push(item)
+                                                        return result
+                                                    }, [])
+
+            return { userWhoBrawledCurrentUserList, userIdsWhoBrawledCurrentUser }
+        } catch (error) {
+            console.log(error)
         }
     }
 
@@ -414,9 +471,6 @@ class MatchController {
             matchedUserPicture: currentUserPicture,
         }
 
-        console.log(`req.userData._id_new_match: ${req.userData._id}_new_match`)
-        console.log(`req.body.challengedId_new_match: ${req.body.challengedId}_new_match`)
-
         io.sockets.emit(`${req.userData._id}_new_match`, { socketResponse: socketResponse, matchedUser: matchedUser })
 
         subscriptionController.sendNotification(
@@ -451,14 +505,16 @@ class MatchController {
             })
 
             await match.save()
-
-            subscriptionController.sendNotification(
-                req.userData._id,
-                req.body.challengedId,
-                'Brawlr',
-                'Wants to brawl!',
-                `https://brawlr.netlify.com/fighters`
-            )
+            
+            if (parseInt(req.body.challengeType) === 1) {
+                subscriptionController.sendNotification(
+                    req.userData._id,
+                    req.body.challengedId,
+                    'Brawlr',
+                    'Lets brawl!',
+                    `https://brawlr.netlify.com/fighters`
+                )
+            }
 
             return res.status(200).send()
         } catch (error) {
