@@ -68,6 +68,8 @@ class MatchValidation {
             
             if (parseInt(req.body.challengeType) === 1 && !parseInt(brawl.remaining)) {
                 return res.status(422).send({
+                    challengeType: 1,
+                    currentDate: new Date(),
                     resetDate: brawl.resetDate,
                     message: 'No brawls remaining'
                 })
@@ -75,6 +77,8 @@ class MatchValidation {
 
             if (parseInt(req.body.challengeType) === 0 && !parseInt(fight.remaining)) {
                 return res.status(422).send({
+                    challengeType: 0,
+                    currentDate: new Date(),
                     resetDate: fight.resetDate,
                     message: 'No fights remaining'
                 })
