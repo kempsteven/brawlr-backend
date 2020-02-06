@@ -390,7 +390,7 @@ class MatchController {
         const dateTodayTime = dateToday.getTime()
 
         if (shouldScheduleResetForUsersBrawl) {
-            const dateForJob = new Date(dateToday.setTime(dateTodayTime + (24 * 60 * 60 * 1000)))
+            const dateForJob = new Date(dateToday.setTime(dateTodayTime + (12 * 60 * 60 * 1000)))
 
             await userModel.updateOne({ _id: req.userData._id }, { 'brawl.resetDate': dateForJob })
 
